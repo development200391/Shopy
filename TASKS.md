@@ -18,8 +18,12 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
   - [x] Table `Orders`: `Id`, `OrderNumber` (unique), `UserId` (FK), `AddressId` (FK), `Status` (enum: Pending/Processing/Shipped/Completed/Cancelled), `TotalAmount`, snapshot alamat pengiriman (`RecipientName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode` — disalin dari `Addresses` saat checkout), `CreatedAt`, `UpdatedAt`, `IsDeleted`
   - [x] Table `OrderItems`: `Id`, `OrderId` (FK), `ProductId` (FK), `ProductNameSnapshot`, `UnitPrice` (snapshot harga saat order), `Quantity`, `Subtotal`, `IsDeleted`
   - [x] Setup EF Core migration awal & apply ke database dev
-- [ ] Setup design system dasar: warna (oranye `#FF6B35` sebagai primary), tipografi, spacing
-- [ ] Finalisasi logo & assets (sudah selesai — `assets/logo.svg`)
+- [x] Setup design system dasar: warna (oranye `#FF6B35` sebagai primary), tipografi, spacing
+  - [x] `AppColors` — primary `#FF6B35`, Material 3 `ColorScheme`, warna semantik (success/warning/error)
+  - [x] `AppTypography` — text theme Poppins (Google Fonts) di seluruh skala Material 3
+  - [x] `AppSpacing` — skala 4/8/16/24/32/48
+  - [x] `AppTheme` digabung jadi `ThemeData` & di-wire ke `MaterialApp`
+- [x] Finalisasi logo & assets (sudah selesai — `assets/logo.svg`)
 
 ## Fase 1 — Autentikasi
 
