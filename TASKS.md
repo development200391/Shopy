@@ -6,18 +6,18 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
 - [x] Setup monorepo: `git init` di root, dengan subfolder `shopy-mobile` (Flutter) dan `shopy-api` (.NET Core) — tanpa `.git` terpisah di masing-masing subfolder
 - [x] Setup PostgreSQL database (local & environment dev)
-- [ ] Desain skema database awal (users, products, categories, cart, orders)
+- [x] Desain skema database awal (users, products, categories, cart, orders)
   - Ketentuan umum: semua tabel pakai soft delete (kolom `IsDeleted bool`, default `false`) — bukan hard delete
-  - [ ] Table `Users` (extend `AspNetUsers` dari Identity): `FullName`, `AvatarUrl`, `CreatedAt`, `IsDeleted`
-  - [ ] Table `Addresses` (1 user bisa banyak alamat): `Id`, `UserId` (FK), `Label`, `RecipientName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode`, `IsDefault`, `CreatedAt`, `IsDeleted`
-  - [ ] Table `Categories` (hierarchical/subkategori): `Id`, `Name`, `Slug`, `ParentCategoryId` (FK self-reference, nullable), `ImageUrl`, `CreatedAt`, `IsDeleted`
-  - [ ] Table `Products`: `Id`, `CategoryId` (FK), `Name`, `Slug`, `Description`, `Price`, `Stock`, `ImageUrl` (1 gambar), `RatingAverage`, `RatingCount` (denormalized dari `Reviews`), `IsActive`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Table `Reviews`: `Id`, `ProductId` (FK), `UserId` (FK), `Rating` (1-5), `Comment`, `CreatedAt`, `IsDeleted`
-  - [ ] Table `Carts` (support guest cart): `Id`, `UserId` (FK, nullable untuk guest), `GuestId` (nullable, identifier cart guest), `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Table `CartItems`: `Id`, `CartId` (FK), `ProductId` (FK), `Quantity`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Table `Orders`: `Id`, `OrderNumber` (unique), `UserId` (FK), `AddressId` (FK), `Status` (enum: Pending/Processing/Shipped/Completed/Cancelled), `TotalAmount`, snapshot alamat pengiriman (`RecipientName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode` — disalin dari `Addresses` saat checkout), `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Table `OrderItems`: `Id`, `OrderId` (FK), `ProductId` (FK), `ProductNameSnapshot`, `UnitPrice` (snapshot harga saat order), `Quantity`, `Subtotal`, `IsDeleted`
-  - [ ] Setup EF Core migration awal & apply ke database dev
+  - [x] Table `Users` (extend `AspNetUsers` dari Identity): `FullName`, `AvatarUrl`, `CreatedAt`, `IsDeleted`
+  - [x] Table `Addresses` (1 user bisa banyak alamat): `Id`, `UserId` (FK), `Label`, `RecipientName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode`, `IsDefault`, `CreatedAt`, `IsDeleted`
+  - [x] Table `Categories` (hierarchical/subkategori): `Id`, `Name`, `Slug`, `ParentCategoryId` (FK self-reference, nullable), `ImageUrl`, `CreatedAt`, `IsDeleted`
+  - [x] Table `Products`: `Id`, `CategoryId` (FK), `Name`, `Slug`, `Description`, `Price`, `Stock`, `ImageUrl` (1 gambar), `RatingAverage`, `RatingCount` (denormalized dari `Reviews`), `IsActive`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Table `Reviews`: `Id`, `ProductId` (FK), `UserId` (FK), `Rating` (1-5), `Comment`, `CreatedAt`, `IsDeleted`
+  - [x] Table `Carts` (support guest cart): `Id`, `UserId` (FK, nullable untuk guest), `GuestId` (nullable, identifier cart guest), `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Table `CartItems`: `Id`, `CartId` (FK), `ProductId` (FK), `Quantity`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Table `Orders`: `Id`, `OrderNumber` (unique), `UserId` (FK), `AddressId` (FK), `Status` (enum: Pending/Processing/Shipped/Completed/Cancelled), `TotalAmount`, snapshot alamat pengiriman (`RecipientName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode` — disalin dari `Addresses` saat checkout), `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Table `OrderItems`: `Id`, `OrderId` (FK), `ProductId` (FK), `ProductNameSnapshot`, `UnitPrice` (snapshot harga saat order), `Quantity`, `Subtotal`, `IsDeleted`
+  - [x] Setup EF Core migration awal & apply ke database dev
 - [ ] Setup design system dasar: warna (oranye `#FF6B35` sebagai primary), tipografi, spacing
 - [ ] Finalisasi logo & assets (sudah selesai — `assets/logo.svg`)
 
