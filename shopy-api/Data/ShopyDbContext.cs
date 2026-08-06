@@ -17,6 +17,7 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -115,6 +116,16 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .HasForeignKey(o => o.AddressId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.Property(o => o.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<RefreshToken>(e =>
+        {
+            e.HasIndex(rt => rt.Token).IsUnique();
+            e.HasOne(rt => rt.User)
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(rt => rt.CreatedAt).HasDefaultValueSql("now()");
         });
 
         builder.Entity<OrderItem>(e =>

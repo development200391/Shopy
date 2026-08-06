@@ -27,10 +27,10 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
 ## Fase 1 — Autentikasi
 
-- [ ] Backend: setup ASP.NET Core Identity
-- [ ] Backend: endpoint register & login
-- [ ] Backend: generate JWT (access token) + refresh token
-- [ ] Backend: middleware validasi token
+- [x] Backend: setup ASP.NET Core Identity
+- [x] Backend: endpoint register & login
+- [x] Backend: generate JWT (access token) + refresh token
+- [x] Backend: middleware validasi token
 - [ ] Flutter: halaman Login & Register (UI)
 - [ ] Flutter: provider (Riverpod) untuk auth state
 - [ ] Flutter: simpan token dengan `flutter_secure_storage`
