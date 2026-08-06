@@ -31,8 +31,12 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 - [x] Backend: endpoint register & login
 - [x] Backend: generate JWT (access token) + refresh token
 - [x] Backend: middleware validasi token
-- [ ] Backend: integrasi login sosial (Google & Facebook OAuth)
-- [ ] Backend: endpoint lupa password (request reset & verifikasi kode)
+- [x] Backend: integrasi login sosial (Google & Facebook OAuth)
+  - Endpoint `POST /api/auth/external/google` (verifikasi ID token) & `POST /api/auth/external/facebook` (verifikasi access token via Graph API) sudah jadi & teruji dengan token palsu (401) dan config kosong (503)
+  - ⚠️ **Belum bisa dites dengan token asli** — butuh Google OAuth Client ID & Facebook App ID/Secret yang harus dibuat manual oleh kamu (lihat penjelasan di chat), lalu diisi ke `appsettings.Development.json` → `Authentication:Google:ClientId` & `Authentication:Facebook:AppId`/`AppSecret`
+- [x] Backend: endpoint lupa password (request reset & verifikasi kode)
+  - `POST /api/auth/forgot-password`, `/verify-reset-code`, `/reset-password` — OTP 6 digit, expired 10 menit, hashed di DB, sudah teruji end-to-end (termasuk reuse code ditolak, email tidak terdaftar tidak bocor)
+  - ⚠️ **Pengiriman email masih pakai kredensial Gmail SMTP placeholder** — isi `appsettings.Development.json` → `Email:Username` (alamat Gmail) & `Email:Password` (App Password, bukan password akun biasa — perlu aktifkan 2FA dulu di akun Google lalu generate di myaccount.google.com/apppasswords). Selama placeholder kosong, OTP hanya tercatat di server log (mode dev), tidak benar-benar terkirim ke email.
 - [ ] Flutter: halaman Login & Register (UI) — desain terpilih: **Wave Header**, termasuk tombol login via Google & Facebook
 
   ![Mockup Login & Register - Wave Header](./shopy-mobile/design/assets/login-register-wave-header.png)

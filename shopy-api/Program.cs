@@ -30,6 +30,9 @@ builder.Services
     .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IFacebookAuthService, FacebookAuthService>();
+builder.Services.AddHttpClient();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services

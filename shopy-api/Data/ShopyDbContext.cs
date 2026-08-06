@@ -18,6 +18,7 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -126,6 +127,15 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .HasForeignKey(rt => rt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.Property(rt => rt.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<PasswordResetCode>(e =>
+        {
+            e.HasOne(prc => prc.User)
+                .WithMany()
+                .HasForeignKey(prc => prc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(prc => prc.CreatedAt).HasDefaultValueSql("now()");
         });
 
         builder.Entity<OrderItem>(e =>
