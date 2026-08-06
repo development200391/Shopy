@@ -41,6 +41,7 @@ public class AuthController(
             UserName = request.Email,
             Email = request.Email,
             FullName = request.FullName,
+            PhoneNumber = request.PhoneNumber,
             CreatedAt = DateTime.UtcNow,
         };
 

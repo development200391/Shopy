@@ -37,20 +37,26 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 - [x] Backend: endpoint lupa password (request reset & verifikasi kode)
   - `POST /api/auth/forgot-password`, `/verify-reset-code`, `/reset-password` — OTP 6 digit, expired 10 menit, hashed di DB, sudah teruji end-to-end (termasuk reuse code ditolak, email tidak terdaftar tidak bocor)
   - ⚠️ **Pengiriman email masih pakai kredensial Gmail SMTP placeholder** — isi `appsettings.Development.json` → `Email:Username` (alamat Gmail) & `Email:Password` (App Password, bukan password akun biasa — perlu aktifkan 2FA dulu di akun Google lalu generate di myaccount.google.com/apppasswords). Selama placeholder kosong, OTP hanya tercatat di server log (mode dev), tidak benar-benar terkirim ke email.
-- [ ] Flutter: halaman Login & Register (UI) — desain terpilih: **Wave Header**, termasuk tombol login via Google & Facebook
+- [x] Flutter: halaman Login & Register (UI) — desain terpilih: **Wave Header**, termasuk tombol login via Google & Facebook
 
   ![Mockup Login & Register - Wave Header](./shopy-mobile/design/assets/login-register-wave-header.png)
 
-- [ ] Flutter: halaman Lupa Password (UI) — alur: input email → verifikasi kode OTP → buat password baru
+  - `screens/auth/login_screen.dart` & `register_screen.dart`, reusable `widgets/auth/{wave_header,auth_text_field,social_login_button}.dart`
+  - Register nambah field Nomor HP (sesuai mockup) → backend `RegisterRequest.PhoneNumber` disesuaikan
+  - ⚠️ Tombol Google/Facebook baru UI saja (nampilin pesan "belum dikonfigurasi") — integrasi SDK native (`google_sign_in`/`flutter_facebook_auth` + config Android/iOS) belum dikerjakan, karena butuh kredensial OAuth asli yang belum ada (lihat catatan di item Backend login sosial di atas)
+- [x] Flutter: halaman Lupa Password (UI) — alur: input email → verifikasi kode OTP → buat password baru
 
   ![Mockup Lupa Password - Wave Header](./shopy-mobile/design/assets/forgot-password-wave-header.png)
 
-- [ ] Flutter: provider (Riverpod) untuk auth state
-- [ ] Flutter: simpan token dengan `flutter_secure_storage`
-- [ ] Flutter: auto refresh token saat expired
-- [ ] Flutter: halaman Splash/cek status login — desain terpilih: **Pulse Rings**, pakai logo asli (`assets/logo.svg`)
+  - `forgot_password_screen.dart` → `verify_code_screen.dart` (OTP 6 digit + countdown resend 59 detik) → `reset_password_screen.dart`
+- [x] Flutter: provider (Riverpod) untuk auth state — `providers/auth_provider.dart` (`AuthNotifier`: login/register/logout/bootstrap)
+- [x] Flutter: simpan token dengan `flutter_secure_storage` — `services/token_storage_service.dart`
+- [x] Flutter: auto refresh token saat expired — interceptor Dio di `services/api_client.dart` (401 → refresh sekali → retry request asli, dengan lock supaya tidak dobel-refresh kalau ada beberapa request 401 bersamaan)
+- [x] Flutter: halaman Splash/cek status login — desain terpilih: **Pulse Rings**, pakai logo asli (`assets/logo.svg`)
 
   ![Mockup Splash - Pulse Rings](./shopy-mobile/design/assets/splash-pulse-rings.png)
+
+  - `screens/splash/splash_screen.dart` — animasi pulse ring + cek sesi tersimpan, lalu arahkan ke Login atau Home placeholder (Home asli baru dibuat Fase 2)
 
 ## Fase 2 — Katalog Produk
 

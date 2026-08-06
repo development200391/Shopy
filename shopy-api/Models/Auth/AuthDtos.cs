@@ -12,6 +12,9 @@ public class RegisterRequest
 
     [Required]
     public string FullName { get; set; } = string.Empty;
+
+    [Phone]
+    public string? PhoneNumber { get; set; }
 }
 
 public class LoginRequest
