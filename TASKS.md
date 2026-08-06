@@ -31,7 +31,16 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 - [x] Backend: endpoint register & login
 - [x] Backend: generate JWT (access token) + refresh token
 - [x] Backend: middleware validasi token
-- [ ] Flutter: halaman Login & Register (UI)
+- [ ] Backend: integrasi login sosial (Google & Facebook OAuth)
+- [ ] Backend: endpoint lupa password (request reset & verifikasi kode)
+- [ ] Flutter: halaman Login & Register (UI) — desain terpilih: **Wave Header**, termasuk tombol login via Google & Facebook
+
+  ![Mockup Login & Register - Wave Header](./shopy-mobile/design/assets/login-register-wave-header.png)
+
+- [ ] Flutter: halaman Lupa Password (UI) — alur: input email → verifikasi kode OTP → buat password baru
+
+  ![Mockup Lupa Password - Wave Header](./shopy-mobile/design/assets/forgot-password-wave-header.png)
+
 - [ ] Flutter: provider (Riverpod) untuk auth state
 - [ ] Flutter: simpan token dengan `flutter_secure_storage`
 - [ ] Flutter: auto refresh token saat expired

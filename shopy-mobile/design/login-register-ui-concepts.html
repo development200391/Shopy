@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopy — 10 Konsep UI Login &amp; Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FF6B35;
+    --secondary:#2B2D42;
+    --bg:#FAFAFA;
+    --surface:#FFFFFF;
+    --text:#1A1A1A;
+    --text-sec:#6B6B6B;
+    --divider:#E0E0E0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Poppins',sans-serif; background:#EFEFEF; color:var(--text);
+    padding:32px 16px 80px;
+  }
+  .page{max-width:1180px;margin:0 auto;}
+  .page-header h1{font-size:22px;font-weight:600;margin:0 0 6px;}
+  .page-header p{font-size:14px;color:var(--text-sec);margin:0 0 28px;max-width:640px;line-height:1.6;}
+  .gallery-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:20px;
+  }
+  .card{
+    background:#fff; border-radius:16px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08);
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .card-label{font-size:14px;font-weight:600;margin:2px 0 2px;text-align:center;}
+  .card-desc{font-size:12px;color:var(--text-sec);text-align:center;margin:0 0 12px;min-height:32px;}
+  .mini-wrap{width:172px;height:369px;overflow:hidden;border-radius:26px;position:relative;}
+  .mini-wrap .phone-frame{transform:scale(0.645);transform-origin:top left;}
+  .expand-btn{
+    margin-top:14px; border:none; background:var(--primary); color:#fff; font-family:inherit;
+    font-size:13px; font-weight:600; padding:9px 18px; border-radius:10px; cursor:pointer;
+  }
+  .expand-btn:hover{opacity:.9;}
+
+  .phone-frame{
+    width:266px; height:566px; border-radius:34px; overflow:hidden; position:relative;
+    background:var(--bg); border:7px solid #17181c; box-shadow:0 14px 30px rgba(0,0,0,.2);
+    display:flex; flex-direction:column; font-family:'Poppins',sans-serif;
+  }
+  .hero{
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:#fff; overflow:hidden; flex-shrink:0; height:80px; transition:none;
+  }
+  .logo-badge{
+    width:38px;height:38px;border-radius:12px;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;
+  }
+  .app-name{font-size:15px;font-weight:600;margin-top:6px;}
+  .tagline{font-size:10.5px;color:var(--text-sec);margin-top:2px;}
+  .form-card{
+    flex:1; background:#fff; padding:18px 20px 16px; display:flex; flex-direction:column; overflow-y:auto;
+  }
+  .form-title{font-size:18px;font-weight:600;margin:0 0 2px;}
+  .form-sub{font-size:11px;color:var(--text-sec);margin:0 0 14px;}
+  .field{display:block;margin-bottom:10px;}
+  .field-label{display:block;font-size:10.5px;color:var(--text-sec);margin-bottom:4px;font-weight:500;}
+  .input-wrap{
+    display:flex;align-items:center;gap:6px;border:1px solid var(--divider);border-radius:10px;
+    padding:0 10px;height:36px;background:#fff;
+  }
+  .input-wrap svg{flex-shrink:0;width:15px;height:15px;stroke:var(--text-sec);}
+  .input-wrap input{
+    border:none;outline:none;flex:1;font-family:inherit;font-size:12px;background:transparent;color:var(--text);
+    min-width:0;
+  }
+  .input-wrap input::placeholder{color:#B3B3B3;}
+  .forgot{font-size:10.5px;color:var(--primary);text-align:right;margin:-2px 0 10px;font-weight:500;}
+  .btn-primary{
+    border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:600;font-size:13px;
+    height:40px;border-radius:10px;cursor:pointer;margin-top:2px;
+  }
+  .divider{display:flex;align-items:center;gap:8px;margin:14px 0;font-size:10px;color:var(--text-sec);}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--divider);}
+  .social-row{display:flex;gap:8px;justify-content:center;margin-bottom:14px;}
+  .social-btn{
+    width:34px;height:34px;border-radius:9px;border:1px solid var(--divider);background:#fff;
+    font-size:12px;font-weight:700;color:var(--text-sec);cursor:default;
+  }
+  .toggle-link{font-size:11px;text-align:center;color:var(--text-sec);}
+  .toggle-link a{color:var(--primary);font-weight:600;text-decoration:none;cursor:pointer;}
+
+  .wave{position:absolute;bottom:-1px;left:0;width:100%;height:auto;display:block;}
+  .illus{width:64px;height:64px;border-radius:20px;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
+  .illus svg{width:30px;height:30px;stroke:var(--primary);}
+  .handle{width:34px;height:4px;background:var(--divider);border-radius:2px;margin:0 auto 12px;}
+  .app-grid-fake{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px;opacity:.5;}
+  .app-grid-fake div{background:#fff;border-radius:8px;}
+  .fade-word{position:relative;z-index:1;font-size:20px;font-weight:700;color:#DADADA;letter-spacing:1px;}
+
+  [data-style="2"] .hero{height:190px;background:linear-gradient(180deg,#FFE4D6,#FFF6F1);justify-content:flex-end;padding-bottom:14px;}
+  [data-style="2"] .form-card{margin-top:-26px;border-radius:26px 26px 0 0;box-shadow:0 -6px 14px rgba(0,0,0,.06);}
+  [data-style="2"] .input-wrap{border:none;background:#F5F5F5;border-radius:12px;}
+
+  [data-style="3"] .hero{height:170px;background:var(--primary);}
+  [data-style="3"] .app-name,[data-style="3"] .tagline{color:#fff;}
+  [data-style="3"] .logo-badge{background:#fff;color:var(--primary);}
+  [data-style="3"] .form-card{margin-top:-24px;border-radius:22px 22px 0 0;}
+  [data-style="3"] .input-wrap{border-radius:999px;}
+  [data-style="3"] .btn-primary{border-radius:999px;}
+
+  [data-style="4"] .phone-frame{background:linear-gradient(160deg,#FF6B35,#C1272D);}
+  [data-style="4"] .hero{background:transparent;height:110px;}
+  [data-style="4"] .app-name,[data-style="4"] .tagline{color:#fff;}
+  [data-style="4"] .logo-badge{background:rgba(255,255,255,.25);}
+  [data-style="4"] .form-card{
+    background:rgba(255,255,255,.16); margin:0 14px 14px; border-radius:22px;
+    border:1px solid rgba(255,255,255,.35); flex:none;
+  }
+  [data-style="4"] .form-title,[data-style="4"] .form-sub,[data-style="4"] .field-label,[data-style="4"] .toggle-link{color:#fff;}
+  [data-style="4"] .form-sub,[data-style="4"] .field-label{color:rgba(255,255,255,.75);}
+  [data-style="4"] .input-wrap{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);}
+  [data-style="4"] .input-wrap input{color:#fff;}
+  [data-style="4"] .input-wrap svg{stroke:#fff;}
+  [data-style="4"] .btn-primary{background:#fff;color:var(--primary);}
+  [data-style="4"] .divider{color:rgba(255,255,255,.7);}
+  [data-style="4"] .divider::before,[data-style="4"] .divider::after{background:rgba(255,255,255,.3);}
+  [data-style="4"] .social-btn{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;}
+  [data-style="4"] .toggle-link a{color:#fff;text-decoration:underline;}
+
+  [data-style="5"] .hero{justify-content:center;align-items:flex-start;padding-left:22px;height:64px;}
+  [data-style="5"] .hero .logo-badge{display:none;}
+  [data-style="5"] .app-name{margin-top:0;font-size:16px;}
+  [data-style="5"] .form-card{padding:26px 24px 16px;}
+  [data-style="5"] .field-label{text-transform:uppercase;letter-spacing:.6px;font-size:9.5px;}
+  [data-style="5"] .input-wrap{border:none;border-bottom:1.4px solid var(--divider);border-radius:0;padding:0 2px;}
+  [data-style="5"] .btn-primary{border-radius:4px;}
+  [data-style="5"] .social-row{display:none;}
+  [data-style="5"] .divider{display:none;}
+
+  [data-style="6"] .hero{height:120px;align-items:flex-start;padding-left:22px;justify-content:center;}
+  [data-style="6"] .app-name{font-size:26px;font-weight:700;margin-top:0;}
+  [data-style="6"] .tagline{color:var(--primary);font-weight:600;}
+  [data-style="6"] .logo-badge{display:none;}
+  [data-style="6"] .input-wrap{background:#FFF1EA;border:none;border-radius:14px;height:40px;}
+  [data-style="6"] .btn-primary{border-radius:999px;height:46px;font-size:14px;letter-spacing:.4px;}
+  [data-style="6"] .social-btn{width:40px;height:40px;border-radius:12px;}
+
+  [data-style="7"] .phone-frame{background:var(--secondary);}
+  [data-style="7"] .hero{background:var(--secondary);}
+  [data-style="7"] .app-name{color:#fff;}
+  [data-style="7"] .tagline{color:#9A9CB5;}
+  [data-style="7"] .form-card{background:var(--secondary);}
+  [data-style="7"] .form-title{color:#fff;}
+  [data-style="7"] .form-sub{color:#9A9CB5;}
+  [data-style="7"] .field-label{color:#9A9CB5;}
+  [data-style="7"] .input-wrap{background:#383B58;border-color:rgba(255,255,255,.08);}
+  [data-style="7"] .input-wrap input{color:#fff;}
+  [data-style="7"] .input-wrap svg{stroke:#9A9CB5;}
+  [data-style="7"] .divider{color:#9A9CB5;}
+  [data-style="7"] .divider::before,[data-style="7"] .divider::after{background:#42456A;}
+  [data-style="7"] .social-btn{background:#383B58;border-color:rgba(255,255,255,.08);color:#fff;}
+  [data-style="7"] .toggle-link{color:#9A9CB5;}
+
+  [data-style="8"] .hero{height:210px;background:var(--primary);justify-content:center;}
+  [data-style="8"] .app-name,[data-style="8"] .tagline{color:#fff;}
+  [data-style="8"] .app-name{font-size:19px;}
+  [data-style="8"] .logo-badge{background:#fff;color:var(--primary);width:44px;height:44px;font-size:20px;}
+  [data-style="8"] .form-card{margin-top:-22px;border-radius:24px 24px 0 0;}
+  [data-style="8"] .btn-primary{background:var(--secondary);}
+
+  [data-style="9"] .hero{height:230px;background:#EDEDED;justify-content:center;align-items:center;}
+  [data-style="9"] .hero .app-grid-fake div:nth-child(3n){background:#FFDDCB;}
+  [data-style="9"] .hero .logo-badge,[data-style="9"] .hero .tagline{display:none;}
+  [data-style="9"] .form-card{margin-top:-30px;border-radius:26px 26px 0 0;box-shadow:0 -8px 16px rgba(0,0,0,.08);padding-top:10px;}
+
+  [data-style="10"] .phone-frame{background:#F0F0F2;}
+  [data-style="10"] .hero{background:transparent;height:36px;}
+  [data-style="10"] .hero .app-name,[data-style="10"] .hero .tagline,[data-style="10"] .hero .logo-badge{display:none;}
+  [data-style="10"] .form-card{
+    background:#fff;margin:6px 14px 14px;border-radius:22px;box-shadow:0 8px 20px rgba(0,0,0,.08);flex:none;
+  }
+  [data-style="10"] .top-badge{display:flex;flex-direction:column;align-items:center;margin-bottom:10px;}
+  [data-style="10"] .input-wrap{border-radius:999px;}
+  [data-style="10"] .btn-primary{border-radius:999px;background:linear-gradient(90deg,#FF6B35,#FF8A5C);}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center;
+    z-index:100; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff; border-radius:20px; padding:18px; max-width:340px; width:100%; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.3);
+  }
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .modal-header span{font-size:15px;font-weight:600;}
+  .modal-header button{
+    border:none;background:#F0F0F0;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;color:var(--text-sec);
+  }
+  .phone-shell{display:flex;justify-content:center;}
+  .modal-hint{font-size:11px;color:var(--text-sec);margin-top:12px;}
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-header">
+      <h1>Shopy — 10 konsep UI Login &amp; Register</h1>
+      <p>Klik "Perbesar" untuk lihat versi penuh dan toggle antara Login / Daftar. Kabari nomor konsep favorit, nanti dibangun jadi kode Flutter beneran dan task di TASKS.md dicentang.</p>
+    </div>
+    <div class="gallery-grid" id="gallery"></div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="modalTitle">Konsep 1</span>
+        <button id="modalClose">&times;</button>
+      </div>
+      <div class="phone-shell">
+        <div class="phone-frame" id="modalPhone" data-style="1"></div>
+      </div>
+      <div class="modal-hint">Klik link "Daftar" / "Masuk" di dalam mockup untuk toggle mode.</div>
+    </div>
+  </div>
+
+<script>
+const STYLES = [
+  {n:1, name:"Klasik Minimalis", desc:"Card putih polos, input outline, tombol solid"},
+  {n:2, name:"Hero Ilustrasi", desc:"Ilustrasi gradien di atas, form overlap"},
+  {n:3, name:"Wave Header", desc:"Panel oranye penuh, form pill overlap"},
+  {n:4, name:"Gradient Glass", desc:"Gradien oranye-merah, card kaca (glassmorphism)"},
+  {n:5, name:"Garis Minimalis", desc:"Input underline, banyak whitespace"},
+  {n:6, name:"Onboarding Bold", desc:"Judul besar, input pill terisi, tombol chunky"},
+  {n:7, name:"Dark Premium", desc:"Latar gelap, aksen oranye elegan"},
+  {n:8, name:"Split Panel", desc:"Panel oranye solid atas, sheet putih bawah"},
+  {n:9, name:"Bottom Sheet", desc:"Preview app di belakang, form sheet melayang"},
+  {n:10, name:"Card Elevated", desc:"Card melayang dengan shadow, tombol gradien"},
+];
+
+const ICONS = {
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>',
+  mail:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l1.5 4M18 2l-1.5 4M4 6h16l-1.5 14h-13L4 6z"/><path d="M8.5 10a3.5 3.5 0 0 0 7 0"/></svg>',
+};
+
+function field(icon, label, placeholder, isPassword){
+  return '<label class="field">'
+    + '<span class="field-label">'+label+'</span>'
+    + '<span class="input-wrap">'
+    + '<span class="icon">'+ICONS[icon]+'</span>'
+    + '<input type="'+(isPassword?'password':'text')+'" placeholder="'+placeholder+'" />'
+    + '</span></label>';
+}
+
+function renderPhone(styleNum, mode){
+  const isLogin = mode === 'login';
+  let heroInner = '';
+  if(styleNum === 2){
+    heroInner = '<div class="illus">'+ICONS.bag+'</div><div class="app-name">Shopy</div><div class="tagline">Belanja praktis, kapan saja</div>';
+  } else if(styleNum === 9){
+    heroInner = '<div class="app-grid-fake"><div></div><div></div><div></div><div></div><div></div><div></div></div><div class="fade-word">SHOPY</div>';
+  } else if(styleNum === 10){
+    heroInner = '';
+  } else {
+    heroInner = '<div class="logo-badge">S</div><div class="app-name">Shopy</div><div class="tagline">Belanja praktis, kapan saja</div>';
+  }
+
+  let topBadge = '';
+  if(styleNum === 10){
+    topBadge = '<div class="top-badge"><div class="logo-badge">S</div><div class="app-name" style="margin-top:6px;">Shopy</div></div>';
+  }
+
+  let fieldsHtml = '';
+  if(!isLogin) fieldsHtml += field('user','Nama Lengkap','Masukkan nama lengkap');
+  fieldsHtml += field('mail','Email','nama@email.com');
+  if(!isLogin) fieldsHtml += field('phone','Nomor HP','08xxxxxxxxxx');
+  fieldsHtml += field('lock','Password','••••••••', true);
+  if(!isLogin) fieldsHtml += field('lock','Konfirmasi Password','••••••••', true);
+
+  const forgot = isLogin ? '<div class="forgot">Lupa password?</div>' : '';
+  const toggle = isLogin
+    ? 'Belum punya akun? <a data-toggle>Daftar</a>'
+    : 'Sudah punya akun? <a data-toggle>Masuk</a>';
+
+  return ''
+    + '<div class="hero">' + heroInner + (styleNum===3 ? waveSvg() : '') + '</div>'
+    + '<div class="form-card">'
+    + (styleNum===9 ? '<div class="handle"></div>' : '')
+    + topBadge
+    + '<h2 class="form-title">'+(isLogin ? 'Masuk' : 'Buat Akun')+'</h2>'
+    + '<p class="form-sub">'+(isLogin ? 'Masuk untuk lanjut belanja di Shopy' : 'Daftar buat mulai belanja di Shopy')+'</p>'
+    + '<form onsubmit="return false;">'
+    + fieldsHtml
+    + forgot
+    + '<button type="button" class="btn-primary">'+(isLogin ? 'Masuk' : 'Daftar')+'</button>'
+    + '</form>'
+    + '<div class="divider"><span>atau</span></div>'
+    + '<div class="social-row"><button class="social-btn" type="button">G</button><button class="social-btn" type="button">f</button><button class="social-btn" type="button">A</button></div>'
+    + '<div class="toggle-link">'+toggle+'</div>'
+    + '</div>';
+}
+
+function waveSvg(){
+  return '<svg class="wave" viewBox="0 0 300 40" preserveAspectRatio="none"><path d="M0,20 C75,45 225,-5 300,20 L300,40 L0,40 Z" fill="#ffffff"/></svg>';
+}
+
+const gallery = document.getElementById('gallery');
+STYLES.forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML =
+    '<div class="mini-wrap"><div class="phone-frame" data-style="'+s.n+'">'+renderPhone(s.n,'login')+'</div></div>'
+    + '<div class="card-label">'+s.n+'. '+s.name+'</div>'
+    + '<div class="card-desc">'+s.desc+'</div>'
+    + '<button class="expand-btn" data-open="'+s.n+'">Perbesar</button>';
+  gallery.appendChild(card);
+});
+
+const overlay = document.getElementById('modalOverlay');
+const modalPhone = document.getElementById('modalPhone');
+const modalTitle = document.getElementById('modalTitle');
+let currentMode = 'login';
+
+function openModal(styleNum){
+  const s = STYLES.find(x => x.n === styleNum);
+  modalPhone.dataset.style = styleNum;
+  currentMode = 'login';
+  modalTitle.textContent = styleNum + '. ' + s.name;
+  modalPhone.innerHTML = renderPhone(styleNum, currentMode);
+  overlay.classList.add('open');
+}
+
+gallery.addEventListener('click', e => {
+  const btn = e.target.closest('[data-open]');
+  if(btn) openModal(Number(btn.dataset.open));
+});
+
+document.getElementById('modalClose').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+
+modalPhone.addEventListener('click', e => {
+  if(e.target.closest('[data-toggle]')){
+    currentMode = currentMode === 'login' ? 'register' : 'login';
+    modalPhone.innerHTML = renderPhone(Number(modalPhone.dataset.style), currentMode);
+  }
+});
+</script>
+</body>
+</html>
