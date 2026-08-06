@@ -44,7 +44,9 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 - [ ] Flutter: provider (Riverpod) untuk auth state
 - [ ] Flutter: simpan token dengan `flutter_secure_storage`
 - [ ] Flutter: auto refresh token saat expired
-- [ ] Flutter: halaman Splash/cek status login
+- [ ] Flutter: halaman Splash/cek status login — desain terpilih: **Pulse Rings**, pakai logo asli (`assets/logo.svg`)
+
+  ![Mockup Splash - Pulse Rings](./shopy-mobile/design/assets/splash-pulse-rings.png)
 
 ## Fase 2 — Katalog Produk
 

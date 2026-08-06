@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopy — 10 Konsep UI Splash Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FF6B35;
+    --secondary:#2B2D42;
+    --bg:#FAFAFA;
+    --text:#1A1A1A;
+    --text-sec:#6B6B6B;
+    --divider:#E0E0E0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Poppins',sans-serif; background:#EFEFEF; color:var(--text);
+    padding:32px 16px 80px;
+  }
+  .page{max-width:1180px;margin:0 auto;}
+  .page-header h1{font-size:22px;font-weight:600;margin:0 0 6px;}
+  .page-header p{font-size:14px;color:var(--text-sec);margin:0 0 28px;max-width:640px;line-height:1.6;}
+  .gallery-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:20px;}
+  .card{background:#fff; border-radius:16px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); display:flex; flex-direction:column; align-items:center;}
+  .card-label{font-size:14px;font-weight:600;margin:2px 0 2px;text-align:center;}
+  .card-desc{font-size:12px;color:var(--text-sec);text-align:center;margin:0 0 12px;min-height:32px;}
+  .mini-wrap{width:172px;height:369px;overflow:hidden;border-radius:26px;position:relative;}
+  .mini-wrap .phone-frame{transform:scale(0.645);transform-origin:top left;}
+  .expand-btn{margin-top:14px; border:none; background:var(--primary); color:#fff; font-family:inherit; font-size:13px; font-weight:600; padding:9px 18px; border-radius:10px; cursor:pointer;}
+  .expand-btn:hover{opacity:.9;}
+
+  .phone-frame{
+    width:266px; height:566px; border-radius:34px; overflow:hidden; position:relative;
+    background:var(--bg); border:7px solid #17181c; box-shadow:0 14px 30px rgba(0,0,0,.2);
+    display:flex; flex-direction:column; font-family:'Poppins',sans-serif;
+  }
+  .splash{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative; text-align:center; padding:24px; overflow:hidden;
+  }
+  .logo-badge{
+    width:64px;height:64px;border-radius:20px;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;
+    position:relative; z-index:2;
+  }
+  .app-name{font-size:22px;font-weight:700;margin-top:16px;position:relative;z-index:2;}
+  .tagline{font-size:12px;color:var(--text-sec);margin-top:6px;position:relative;z-index:2;}
+  .version{position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--text-sec);}
+
+  .loader{margin-top:28px;position:relative;z-index:2;}
+  .loader-dots{display:flex;gap:7px;}
+  .loader-dots span{width:8px;height:8px;border-radius:50%;background:var(--primary);animation:bounce 1.1s infinite ease-in-out;}
+  .loader-dots span:nth-child(2){animation-delay:.15s;}
+  .loader-dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4;}40%{transform:translateY(-6px);opacity:1;}}
+
+  .loader-spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--divider);border-top-color:var(--primary);animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .loader-bar{width:120px;height:4px;background:var(--divider);border-radius:2px;overflow:hidden;}
+  .loader-bar span{display:block;height:100%;width:40%;background:var(--primary);border-radius:2px;animation:slide 1.2s infinite ease-in-out;}
+  @keyframes slide{0%{transform:translateX(-100%);}100%{transform:translateX(300%);}}
+
+  .pulse-ring{position:absolute;border-radius:50%;border:2px solid var(--primary);opacity:0;animation:ring 2s infinite ease-out;}
+  .pulse-ring.r2{animation-delay:.6s;}
+  @keyframes ring{0%{width:64px;height:64px;opacity:.5;}100%{width:150px;height:150px;opacity:0;}}
+
+  [data-style="2"] .phone-frame{background:var(--primary);}
+  [data-style="2"] .logo-badge{background:#fff;color:var(--primary);}
+  [data-style="2"] .app-name{color:#fff;}
+  [data-style="2"] .tagline{color:rgba(255,255,255,.8);}
+  [data-style="2"] .loader-dots span{background:#fff;}
+  [data-style="2"] .version{color:rgba(255,255,255,.7);}
+
+  [data-style="3"] .phone-frame{background:linear-gradient(150deg,#FF6B35,#C1272D);}
+  [data-style="3"] .logo-badge{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);}
+  [data-style="3"] .app-name{color:#fff;}
+  [data-style="3"] .tagline{color:rgba(255,255,255,.8);}
+  [data-style="3"] .loader-dots span{background:#fff;}
+
+  [data-style="4"] .phone-frame{background:var(--secondary);}
+  [data-style="4"] .app-name{color:#fff;}
+  [data-style="4"] .tagline{color:#9A9CB5;}
+  [data-style="4"] .loader-spinner{border-color:#42456A;border-top-color:var(--primary);}
+  [data-style="4"] .version{color:#6C6E90;}
+
+  [data-style="5"] .logo-badge{display:none;}
+  [data-style="5"] .app-name{font-size:38px;color:var(--primary);margin-top:0;}
+  [data-style="5"] .tagline{margin-top:10px;}
+  [data-style="5"] .loader{display:none;}
+
+  [data-style="6"] .app-name{margin-top:26px;}
+
+  [data-style="7"] .phone-frame{background:linear-gradient(180deg,#FFE4D6,#FFF6F1);}
+  [data-style="7"] .illus{width:96px;height:96px;border-radius:28px;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;}
+  [data-style="7"] .illus svg{width:46px;height:46px;stroke:var(--primary);}
+  [data-style="7"] .logo-badge{display:none;}
+  [data-style="7"] .app-name{margin-top:16px;}
+
+  [data-style="8"] .splash{justify-content:flex-start;padding-top:180px;}
+  [data-style="8"] .loader{margin-top:34px;}
+
+  [data-style="9"] .phone-frame{position:relative;}
+  [data-style="9"] .split-top{position:absolute;top:0;left:0;right:0;height:50%;background:var(--primary);}
+  [data-style="9"] .logo-badge{margin-top:-32px;box-shadow:0 6px 14px rgba(0,0,0,.15);}
+
+  [data-style="10"] .pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,107,53,.14) 2px, transparent 2px);background-size:22px 22px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:#fff; border-radius:20px; padding:18px; max-width:340px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.3);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .modal-header span{font-size:15px;font-weight:600;}
+  .modal-header button{border:none;background:#F0F0F0;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;color:var(--text-sec);}
+  .phone-shell{display:flex;justify-content:center;}
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-header">
+      <h1>Shopy — 10 konsep UI Splash Screen</h1>
+      <p>Klik "Perbesar" untuk lihat versi penuh (loader animasinya jalan). Kabari nomor favorit, nanti dibangun jadi kode Flutter dan task di TASKS.md dicentang.</p>
+    </div>
+    <div class="gallery-grid" id="gallery"></div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="modalTitle">Konsep 1</span>
+        <button id="modalClose">&times;</button>
+      </div>
+      <div class="phone-shell">
+        <div class="phone-frame" id="modalPhone" data-style="1"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STYLES = [
+  {n:1, name:"Klasik Tengah", desc:"Logo badge, nama app, progress bar", loader:"bar"},
+  {n:2, name:"Solid Primary", desc:"Latar oranye penuh, logo putih", loader:"dots"},
+  {n:3, name:"Gradient Diagonal", desc:"Gradien oranye-merah, logo kaca", loader:"dots"},
+  {n:4, name:"Dark Premium", desc:"Latar gelap, spinner oranye", loader:"spinner"},
+  {n:5, name:"Wordmark Minimalis", desc:"Cuma teks 'Shopy' besar, tanpa loader", loader:"none"},
+  {n:6, name:"Pulse Rings", desc:"Logo dengan cincin animasi pulse", loader:"dots", pulse:true},
+  {n:7, name:"Ilustrasi", desc:"Ilustrasi tas belanja di latar peach", loader:"dots", illus:true},
+  {n:8, name:"Brand Atas + Versi", desc:"Logo di atas, versi app di bawah", loader:"spinner", version:true},
+  {n:9, name:"Split Block", desc:"Blok warna atas-bawah, logo di tengah", loader:"bar", split:true},
+  {n:10, name:"Pattern Texture", desc:"Tekstur pola titik halus di latar", loader:"bar", pattern:true},
+];
+
+const BAG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l1.5 4M18 2l-1.5 4M4 6h16l-1.5 14h-13L4 6z"/><path d="M8.5 10a3.5 3.5 0 0 0 7 0"/></svg>';
+
+function loaderHtml(type){
+  if(type === 'dots') return '<div class="loader loader-dots"><span></span><span></span><span></span></div>';
+  if(type === 'spinner') return '<div class="loader loader-spinner"></div>';
+  if(type === 'bar') return '<div class="loader loader-bar"><span></span></div>';
+  return '';
+}
+
+function renderSplash(s){
+  let inner = '';
+  if(s.split) inner += '<div class="split-top"></div>';
+  if(s.pattern) inner += '<div class="pattern"></div>';
+  if(s.pulse) inner += '<div class="pulse-ring"></div><div class="pulse-ring r2"></div>';
+  if(s.illus){
+    inner += '<div class="illus">'+BAG_ICON+'</div>';
+  } else {
+    inner += '<div class="logo-badge">S</div>';
+  }
+  inner += '<div class="app-name">Shopy</div>';
+  inner += '<div class="tagline">Belanja praktis, kapan saja</div>';
+  inner += loaderHtml(s.loader);
+  if(s.version) inner += '<div class="version">v1.0.0</div>';
+  return '<div class="splash">' + inner + '</div>';
+}
+
+const gallery = document.getElementById('gallery');
+STYLES.forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML =
+    '<div class="mini-wrap"><div class="phone-frame" data-style="'+s.n+'">'+renderSplash(s)+'</div></div>'
+    + '<div class="card-label">'+s.n+'. '+s.name+'</div>'
+    + '<div class="card-desc">'+s.desc+'</div>'
+    + '<button class="expand-btn" data-open="'+s.n+'">Perbesar</button>';
+  gallery.appendChild(card);
+});
+
+const overlay = document.getElementById('modalOverlay');
+const modalPhone = document.getElementById('modalPhone');
+const modalTitle = document.getElementById('modalTitle');
+
+function openModal(styleNum){
+  const s = STYLES.find(x => x.n === styleNum);
+  modalPhone.dataset.style = styleNum;
+  modalTitle.textContent = styleNum + '. ' + s.name;
+  modalPhone.innerHTML = renderSplash(s);
+  overlay.classList.add('open');
+}
+
+gallery.addEventListener('click', e => {
+  const btn = e.target.closest('[data-open]');
+  if(btn) openModal(Number(btn.dataset.open));
+});
+
+document.getElementById('modalClose').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+</script>
+</body>
+</html>
