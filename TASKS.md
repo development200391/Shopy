@@ -70,6 +70,8 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
   ![Mockup Home - Bold & Colorful](./shopy-mobile/design/assets/home-bold-colorful.png)
 
+  ⚠️ `screens/home/home_screen.dart` saat ini masih placeholder lama (dari Fase 1) yang sudah ditambahin `AppBottomNav` + tombol sementara ke Keranjang/Wishlist (Fase 3 sudah jadi duluan). Begitu halaman Home asli dikerjakan, pakai `AppBottomNav` yang sama (`widgets/shared/app_bottom_nav.dart`) biar navigasi antar tab konsisten, dan tempel `WishlistToggleButton` (lihat item wishlist di Fase 3) di tiap kartu produk.
+
 - [ ] Flutter: halaman Detail Produk — desain terpilih: **Bold & Colorful**
 
   ![Mockup Detail Produk - Bold & Colorful](./shopy-mobile/design/assets/product-detail-bold-colorful.png)
@@ -84,17 +86,22 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
 - [ ] Backend: endpoint cart (add, update qty, remove, get)
 - [ ] Backend: endpoint wishlist
-- [ ] Flutter: halaman Keranjang — desain terpilih: **Bold & Colorful**
+- [x] Flutter: halaman Keranjang — desain terpilih: **Bold & Colorful**
 
   ![Mockup Keranjang - Bold & Colorful](./shopy-mobile/design/assets/keranjang-bold-colorful.png)
 
-  Mockup di atas state utama (terisi). State lain juga sudah didesain (kosong, promo/voucher diterapkan, swipe-to-delete, konfirmasi hapus, ringkasan checkout sebagai bottom sheet) — lihat folder `UI Design - Keranjang, Wishlist` di root project.
-- [ ] Flutter: cartProvider (Riverpod) — sinkron dengan navbar/icon cart
+  `screens/cart/cart_screen.dart` + widget pendukung di `widgets/cart/` (`cart_item_card`, `promo_code_section`, `cart_checkout_bar`, `delete_confirm_sheet`, `checkout_summary_sheet`, `empty_cart_view`). Semua state di mockup sudah jadi: terisi, kosong, promo/voucher (kode demo `HEMAT20`), swipe-to-delete (`Dismissible` + bottom sheet konfirmasi), hapus semua/hapus barang terpilih, dan ringkasan checkout sebagai bottom sheet.
+  - ⚠️ Data keranjang masih in-memory (di-seed 3 produk contoh) karena `Backend: endpoint cart` di atas belum dikerjakan — sambungkan `CartNotifier` di `providers/cart_provider.dart` ke API begitu endpoint-nya ada.
+  - ⚠️ Tombol "Lanjut ke Checkout" di ringkasan cuma nampilin SnackBar placeholder, karena halaman Checkout (Fase 4) belum dikerjakan.
+- [x] Flutter: cartProvider (Riverpod) — sinkron dengan navbar/icon cart
+
+  `providers/cart_provider.dart` (`CartNotifier` + `cartItemCountProvider`). Badge jumlah barang di `widgets/shared/app_bottom_nav.dart` otomatis ikut berubah di halaman mana pun (Home/Keranjang/Wishlist) karena semua baca dari provider yang sama — belum ada backend jadi masih hitung dari state in-memory di atas.
 - [ ] Flutter: fitur wishlist/favorit di halaman produk — desain terpilih: **Bold & Colorful**
 
   ![Mockup Wishlist - Bold & Colorful](./shopy-mobile/design/assets/wishlist-bold-colorful.png)
 
-  Termasuk halaman Wishlist tersendiri (tab di bottom nav) — state grid, list, mode pilih (bulk hapus/tambah keranjang), dan kosong. Lihat folder `UI Design - Keranjang, Wishlist` di root project.
+  Halaman Wishlist-nya sendiri sudah selesai: `screens/wishlist/wishlist_screen.dart` + `providers/wishlist_provider.dart` (`WishlistNotifier`), mencakup semua state mockup (grid, list, mode pilih untuk bulk hapus/pindah ke keranjang, kosong). Juga sudah dibuat `widgets/wishlist/wishlist_toggle_button.dart` — tombol hati reusable yang tinggal ditempel di kartu produk.
+  - ⚠️ Belum dicentang karena bagian "di halaman produk"-nya sendiri belum ada tempat nempel — halaman Home/Detail Produk (Fase 2 Flutter) masih belum dikerjakan. Begitu itu selesai, tinggal drop `WishlistToggleButton` ke kartu produk & detail produk.
 
 ## Fase 4 — Checkout & Pesanan
 
