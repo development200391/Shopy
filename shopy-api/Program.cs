@@ -63,6 +63,9 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    using var seedScope = app.Services.CreateScope();
+    await CatalogSeeder.SeedAsync(seedScope.ServiceProvider.GetRequiredService<ShopyDbContext>());
 }
 
 app.UseHttpsRedirection();

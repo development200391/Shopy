@@ -60,11 +60,24 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
 ## Fase 2 — Katalog Produk
 
-- [ ] Backend: model & endpoint kategori produk
-- [ ] Backend: model & endpoint produk (list, detail, search, filter)
-- [ ] Flutter: halaman Home (listing produk, kategori)
-- [ ] Flutter: halaman Detail Produk
-- [ ] Flutter: fitur pencarian & filter produk
+- [x] Backend: model & endpoint kategori produk
+  - Model `Category` sudah ada dari Fase 0. Endpoint baru: `GET /api/categories` (kategori root), `GET /api/categories/{slug}` (detail + child categories) — `Controllers/CategoriesController.cs`
+- [x] Backend: model & endpoint produk (list, detail, search, filter)
+  - Model `Product` sudah ada dari Fase 0. Endpoint baru: `GET /api/products` (paged, filter `categoryId`/`categorySlug` — termasuk produk dari subkategori, `minPrice`/`maxPrice`, search `q`, sort `Newest`/`PriceAsc`/`PriceDesc`/`RatingDesc`), `GET /api/products/{slug}` (detail) — `Controllers/ProductsController.cs`, DTO di `Models/Catalog/CatalogDtos.cs`
+  - Data contoh (dev-only, auto-seed sekali kalau tabel Categories kosong): `Data/CatalogSeeder.cs` — 8 kategori (4 root + 4 sub), 12 produk. Berguna buat testing & pengembangan Flutter Home nanti.
+  - Sudah dites manual end-to-end lewat `dotnet run` + `curl`: list, filter kategori (termasuk turunan), search, filter harga, sort, detail, 404.
+- [ ] Flutter: halaman Home (listing produk, kategori) — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Home - Bold & Colorful](./shopy-mobile/design/assets/home-bold-colorful.png)
+
+- [ ] Flutter: halaman Detail Produk — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Detail Produk - Bold & Colorful](./shopy-mobile/design/assets/product-detail-bold-colorful.png)
+
+- [ ] Flutter: fitur pencarian & filter produk — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Search & Filter - Bold & Colorful](./shopy-mobile/design/assets/search-filter-bold-colorful.png)
+
 - [ ] Flutter: provider untuk state produk (Riverpod)
 
 ## Fase 3 — Keranjang & Wishlist
