@@ -84,9 +84,17 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 
 - [ ] Backend: endpoint cart (add, update qty, remove, get)
 - [ ] Backend: endpoint wishlist
-- [ ] Flutter: halaman Keranjang
+- [ ] Flutter: halaman Keranjang — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Keranjang - Bold & Colorful](./shopy-mobile/design/assets/keranjang-bold-colorful.png)
+
+  Mockup di atas state utama (terisi). State lain juga sudah didesain (kosong, promo/voucher diterapkan, swipe-to-delete, konfirmasi hapus, ringkasan checkout sebagai bottom sheet) — lihat folder `UI Design - Keranjang, Wishlist` di root project.
 - [ ] Flutter: cartProvider (Riverpod) — sinkron dengan navbar/icon cart
-- [ ] Flutter: fitur wishlist/favorit di halaman produk
+- [ ] Flutter: fitur wishlist/favorit di halaman produk — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Wishlist - Bold & Colorful](./shopy-mobile/design/assets/wishlist-bold-colorful.png)
+
+  Termasuk halaman Wishlist tersendiri (tab di bottom nav) — state grid, list, mode pilih (bulk hapus/tambah keranjang), dan kosong. Lihat folder `UI Design - Keranjang, Wishlist` di root project.
 
 ## Fase 4 — Checkout & Pesanan
 
