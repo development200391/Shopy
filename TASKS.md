@@ -108,22 +108,42 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
 - [ ] Backend: endpoint checkout (buat order dari cart)
 - [ ] Backend: endpoint riwayat & detail pesanan
 - [ ] Backend: manajemen status pesanan (pending, diproses, dikirim, selesai)
-- [ ] Flutter: halaman Checkout (alamat, ringkasan, konfirmasi)
-- [ ] Flutter: halaman Riwayat Transaksi
-- [ ] Flutter: halaman Detail Pesanan + tracking status
+- [ ] Flutter: halaman Checkout (alamat, ringkasan, konfirmasi) — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Checkout - Bold & Colorful](./shopy-mobile/design/assets/checkout-bold-colorful.png)
+
+  Mockup di atas state utama. State lain juga sudah didesain (bottom sheet pilih alamat, halaman konfirmasi pesanan berhasil dengan nomor pesanan) — lihat folder `UI Design - Checkout, Payment, Notifikasi` di root project.
+- [ ] Flutter: halaman Riwayat Transaksi — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Riwayat Transaksi - Bold & Colorful](./shopy-mobile/design/assets/riwayat-transaksi-bold-colorful.png)
+
+  Termasuk tab filter status (Semua/Diproses/Dikirim/Selesai) dan state kosong — lihat folder `UI Design - Checkout, Payment, Notifikasi`.
+- [ ] Flutter: halaman Detail Pesanan + tracking status — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Detail Pesanan - Bold & Colorful](./shopy-mobile/design/assets/detail-pesanan-bold-colorful.png)
 
 ## Fase 5 — Payment Gateway
 
 - [ ] Riset & pilih payment gateway (Midtrans/Xendit, dll)
 - [ ] Backend: integrasi API payment gateway
 - [ ] Backend: webhook konfirmasi pembayaran
-- [ ] Flutter: halaman pembayaran & konfirmasi
+- [ ] Flutter: halaman pembayaran & konfirmasi — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Pembayaran - Bold & Colorful](./shopy-mobile/design/assets/pembayaran-bold-colorful.png)
+
+  Mockup di atas halaman pilih metode (transfer bank/e-wallet/QRIS). State lain juga sudah didesain (instruksi & nomor Virtual Account dengan countdown, halaman konfirmasi pembayaran berhasil) — lihat folder `UI Design - Checkout, Payment, Notifikasi`.
 
 ## Fase 6 — Notifikasi
 
 - [ ] Setup push notification (Firebase Cloud Messaging)
 - [ ] Backend: trigger notifikasi (promo, status pesanan)
-- [ ] Flutter: handle notifikasi (foreground & background)
+- [ ] Flutter: handle notifikasi (foreground & background) — desain terpilih: **Bold & Colorful**
+
+  ![Mockup Notifikasi Banner - Bold & Colorful](./shopy-mobile/design/assets/notifikasi-banner-bold-colorful.png)
+
+  Banner in-app di atas untuk notifikasi foreground. Selain itu didesain juga halaman Riwayat Notifikasi (list dikelompokkan Hari Ini/Kemarin, penanda belum dibaca, state kosong) sebagai pelengkap supaya notifikasi background juga bisa dilihat ulang:
+
+  ![Mockup Riwayat Notifikasi - Bold & Colorful](./shopy-mobile/design/assets/riwayat-notifikasi-bold-colorful.png)
 
 ## Fase 7 — Polish & Testing
 
