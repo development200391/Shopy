@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Supaya enum di body request (mis. UpdateOrderStatusRequest.Status) bisa dikirim
+    // sebagai nama string ("Processing"), bukan cuma angka index-nya.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -32,6 +36,10 @@ builder.Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IFacebookAuthService, FacebookAuthService>();
+builder.Services.AddScoped<IMidtransService, MidtransService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+// Singleton karena FirebaseApp cuma boleh dibuat sekali per proses.
+builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
 builder.Services.AddHttpClient();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");

@@ -7,12 +7,16 @@ class WishlistState {
   final WishlistViewMode viewMode;
   final bool selectionMode;
   final Set<String> selectedIds;
+  final bool loading;
+  final String? error;
 
   const WishlistState({
     this.items = const [],
     this.viewMode = WishlistViewMode.grid,
     this.selectionMode = false,
     this.selectedIds = const {},
+    this.loading = false,
+    this.error,
   });
 
   bool get isEmpty => items.isEmpty;
@@ -28,12 +32,17 @@ class WishlistState {
     WishlistViewMode? viewMode,
     bool? selectionMode,
     Set<String>? selectedIds,
+    bool? loading,
+    String? error,
+    bool clearError = false,
   }) {
     return WishlistState(
       items: items ?? this.items,
       viewMode: viewMode ?? this.viewMode,
       selectionMode: selectionMode ?? this.selectionMode,
       selectedIds: selectedIds ?? this.selectedIds,
+      loading: loading ?? this.loading,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }

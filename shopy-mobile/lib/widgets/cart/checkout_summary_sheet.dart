@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/address_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../screens/checkout/checkout_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 
 /// Bottom sheet ringkasan belanja sebelum lanjut checkout (state
-/// "checkout_summary" di mockup). Tombol "Lanjut ke Checkout" belum
-/// terhubung ke alur nyata karena halaman Checkout (Fase 4) belum dikerjakan.
+/// "checkout_summary" di mockup).
 void showCheckoutSummarySheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
@@ -20,6 +21,7 @@ void showCheckoutSummarySheet(BuildContext context) {
       return Consumer(
         builder: (consumerContext, ref, _) {
           final cart = ref.watch(cartProvider);
+          final defaultAddress = ref.watch(addressProvider.select((s) => s.defaultAddress));
 
           return Padding(
             padding: EdgeInsets.fromLTRB(
@@ -51,14 +53,22 @@ void showCheckoutSummarySheet(BuildContext context) {
                     color: AppColors.background,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Ramdan · Rumah', style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 2),
-                      Text('Jl. Melati No. 12, Bandung', style: TextStyle(color: AppColors.textSecondary)),
-                    ],
-                  ),
+                  child: defaultAddress == null
+                      ? const Text('Alamat belum diatur', style: TextStyle(color: AppColors.textSecondary))
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${defaultAddress.recipientName} · ${defaultAddress.label}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${defaultAddress.fullAddress}, ${defaultAddress.city}',
+                              style: const TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _SummaryRow(label: 'Subtotal Produk', value: formatRupiah(cart.subtotal)),
@@ -80,11 +90,9 @@ void showCheckoutSummarySheet(BuildContext context) {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(consumerContext).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Halaman Checkout belum tersedia (Fase 4 belum dikerjakan).'),
-                        ),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (_) => const CheckoutScreen()));
                     },
                     child: const Text('Lanjut ke Checkout'),
                   ),

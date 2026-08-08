@@ -12,6 +12,7 @@ import '../../widgets/wishlist/wishlist_list_card.dart';
 import '../../widgets/wishlist/wishlist_selection_bar.dart';
 import '../cart/cart_screen.dart';
 import '../home/home_screen.dart';
+import '../orders/order_history_screen.dart';
 
 /// Halaman Wishlist — mencakup semua state di mockup `UI Design -
 /// Keranjang, Wishlist`: grid, list, mode pilih (bulk hapus/tambah
@@ -61,7 +62,11 @@ class WishlistScreen extends ConsumerWidget {
                 ],
               ],
       ),
-      body: wishlist.isEmpty
+      body: wishlist.loading && wishlist.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : wishlist.error != null && wishlist.isEmpty
+          ? _WishlistErrorView(message: wishlist.error!, onRetry: notifier.reload)
+          : wishlist.isEmpty
           ? EmptyWishlistView(
               onExplore: () => Navigator.of(
                 context,
@@ -86,8 +91,12 @@ class WishlistScreen extends ConsumerWidget {
       case AppTab.keranjang:
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const CartScreen()));
         return;
-      case AppTab.kategori:
       case AppTab.profil:
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
+        return;
+      case AppTab.kategori:
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Halaman ini belum tersedia.')));
@@ -156,6 +165,27 @@ class _WishlistList extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _WishlistErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _WishlistErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Gagal memuat wishlist', style: TextStyle(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
+        ],
+      ),
     );
   }
 }

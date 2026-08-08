@@ -17,8 +17,13 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -107,6 +112,7 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
         {
             e.HasIndex(o => o.OrderNumber).IsUnique();
             e.Property(o => o.TotalAmount).HasPrecision(18, 2);
+            e.Property(o => o.ShippingCost).HasPrecision(18, 2);
             e.Property(o => o.Status).HasConversion<string>().HasMaxLength(20);
             e.HasOne(o => o.User)
                 .WithMany(u => u.Orders)
@@ -117,6 +123,52 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .HasForeignKey(o => o.AddressId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.Property(o => o.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<OrderStatusHistory>(e =>
+        {
+            e.Property(h => h.Status).HasConversion<string>().HasMaxLength(20);
+            e.HasOne(h => h.Order)
+                .WithMany()
+                .HasForeignKey(h => h.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(h => h.ChangedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<Payment>(e =>
+        {
+            e.HasIndex(p => p.MidtransOrderId).IsUnique();
+            e.Property(p => p.Method).HasConversion<string>().HasMaxLength(20);
+            e.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
+            e.HasOne(p => p.Order)
+                .WithMany()
+                .HasForeignKey(p => p.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(p => p.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<DeviceToken>(e =>
+        {
+            e.HasIndex(dt => dt.Token).IsUnique();
+            e.HasOne(dt => dt.User)
+                .WithMany()
+                .HasForeignKey(dt => dt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(dt => dt.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<Notification>(e =>
+        {
+            e.Property(n => n.Type).HasConversion<string>().HasMaxLength(20);
+            e.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(n => n.Order)
+                .WithMany()
+                .HasForeignKey(n => n.OrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.Property(n => n.CreatedAt).HasDefaultValueSql("now()");
         });
 
         builder.Entity<RefreshToken>(e =>
@@ -136,6 +188,23 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .HasForeignKey(prc => prc.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.Property(prc => prc.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<WishlistItem>(e =>
+        {
+            e.HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(w => w.Product)
+                .WithMany()
+                .HasForeignKey(w => w.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Satu user hanya bisa punya satu entri wishlist aktif per produk.
+            e.HasIndex(w => new { w.UserId, w.ProductId })
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+            e.Property(w => w.CreatedAt).HasDefaultValueSql("now()");
         });
 
         builder.Entity<OrderItem>(e =>

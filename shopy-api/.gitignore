@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Firebase service account key (secret, dipakai buat kirim push notification —
+# jangan pernah di-commit, lihat Firebase:ServiceAccountKeyPath di appsettings)
+firebase-service-account*.json
+
 # User-specific files
 *.rsuser
 *.suo

@@ -7,8 +7,16 @@ class CartState {
   final List<CartItem> items;
   final String? promoCode;
   final int promoDiscount;
+  final bool loading;
+  final String? error;
 
-  const CartState({this.items = const [], this.promoCode, this.promoDiscount = 0});
+  const CartState({
+    this.items = const [],
+    this.promoCode,
+    this.promoDiscount = 0,
+    this.loading = false,
+    this.error,
+  });
 
   bool get isEmpty => items.isEmpty;
 
@@ -34,11 +42,16 @@ class CartState {
     String? promoCode,
     int? promoDiscount,
     bool clearPromo = false,
+    bool? loading,
+    String? error,
+    bool clearError = false,
   }) {
     return CartState(
       items: items ?? this.items,
       promoCode: clearPromo ? null : (promoCode ?? this.promoCode),
       promoDiscount: clearPromo ? 0 : (promoDiscount ?? this.promoDiscount),
+      loading: loading ?? this.loading,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }

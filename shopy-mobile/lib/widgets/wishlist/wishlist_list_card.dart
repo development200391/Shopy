@@ -79,18 +79,17 @@ class WishlistListCard extends ConsumerWidget {
                       SizedBox(
                         height: 30,
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            ref
-                                .read(cartProvider.notifier)
-                                .addItem(
-                                  productId: item.productId,
-                                  name: item.name,
-                                  variant: item.variant.isEmpty ? '-' : item.variant,
-                                  price: item.price,
-                                );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${item.name} ditambahkan ke keranjang')),
-                            );
+                          onPressed: () async {
+                            try {
+                              await ref.read(cartProvider.notifier).addItem(productId: item.productId);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('${item.name} ditambahkan ke keranjang')),
+                              );
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                            }
                           },
                           icon: const Icon(Icons.shopping_cart_outlined, size: 14),
                           label: const Text('Keranjang', style: TextStyle(fontSize: 11)),

@@ -12,6 +12,7 @@ import '../../widgets/cart/empty_cart_view.dart';
 import '../../widgets/cart/promo_code_section.dart';
 import '../../widgets/shared/app_bottom_nav.dart';
 import '../home/home_screen.dart';
+import '../orders/order_history_screen.dart';
 import '../wishlist/wishlist_screen.dart';
 
 /// Halaman Keranjang — mencakup semua state di mockup `UI Design -
@@ -44,7 +45,11 @@ class CartScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: cart.isEmpty
+      body: cart.loading && cart.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : cart.error != null && cart.isEmpty
+          ? _CartErrorView(message: cart.error!, onRetry: () => ref.read(cartProvider.notifier).reload())
+          : cart.isEmpty
           ? EmptyCartView(
               onStartShopping: () => Navigator.of(
                 context,
@@ -67,8 +72,12 @@ class CartScreen extends ConsumerWidget {
       case AppTab.wishlist:
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const WishlistScreen()));
         return;
-      case AppTab.kategori:
       case AppTab.profil:
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
+        return;
+      case AppTab.kategori:
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Halaman ini belum tersedia.')));
@@ -159,6 +168,27 @@ class _SummaryLine extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: AppColors.textSecondary)),
           Text(value, style: TextStyle(color: valueColor ?? AppColors.textPrimary, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CartErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _CartErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Gagal memuat keranjang', style: TextStyle(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
         ],
       ),
     );

@@ -12,7 +12,9 @@ public class Order : ISoftDeletable
     public Address Address { get; set; } = null!;
 
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
+    public decimal ShippingCost { get; set; }
     public decimal TotalAmount { get; set; }
+    public string? Note { get; set; }
 
     // Snapshot alamat pengiriman saat checkout, supaya histori order tidak berubah
     // walau data di Addresses berubah/dihapus belakangan.

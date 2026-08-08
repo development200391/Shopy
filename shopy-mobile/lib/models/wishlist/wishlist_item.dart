@@ -1,8 +1,4 @@
 /// Item favorit/wishlist milik user.
-///
-/// Catatan: belum terhubung ke backend (`Backend: endpoint wishlist` di
-/// TASKS.md Fase 3 masih belum dikerjakan) — data disimpan in-memory lewat
-/// [WishlistNotifier] dan di-seed dengan data contoh agar UI bisa didemokan.
 class WishlistItem {
   final String id;
   final String productId;
@@ -19,4 +15,16 @@ class WishlistItem {
     required this.price,
     required this.rating,
   });
+
+  /// Parse dari `WishlistItemDto` backend (`GET/POST /api/wishlist`).
+  /// Backend belum punya konsep varian produk, jadi selalu kosong.
+  factory WishlistItem.fromJson(Map<String, dynamic> json) {
+    return WishlistItem(
+      id: json['id'] as String,
+      productId: json['productId'] as String,
+      name: json['productName'] as String,
+      price: (json['price'] as num).round(),
+      rating: (json['ratingAverage'] as num).toDouble(),
+    );
+  }
 }

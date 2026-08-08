@@ -139,18 +139,17 @@ class _QuickAddButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       customBorder: const CircleBorder(),
-      onTap: () {
-        ref
-            .read(cartProvider.notifier)
-            .addItem(
-              productId: item.productId,
-              name: item.name,
-              variant: item.variant.isEmpty ? '-' : item.variant,
-              price: item.price,
-            );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${item.name} ditambahkan ke keranjang')),
-        );
+      onTap: () async {
+        try {
+          await ref.read(cartProvider.notifier).addItem(productId: item.productId);
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('${item.name} ditambahkan ke keranjang')));
+        } catch (e) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        }
       },
       child: Container(
         width: 30,

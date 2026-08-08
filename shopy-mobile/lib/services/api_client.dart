@@ -17,7 +17,7 @@ const _authEndpointsExcludedFromRefresh = [
 ];
 
 String resolveApiBaseUrl() {
-  const port = 5199;
+  const port = 5083;
   if (kIsWeb) return 'http://localhost:$port';
   if (Platform.isAndroid) return 'http://10.0.2.2:$port';
   return 'http://localhost:$port';
