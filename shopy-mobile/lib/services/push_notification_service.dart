@@ -38,24 +38,25 @@ class PushNotificationService {
 
     try {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+      final messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(alert: true, badge: true, sound: true);
+
+      final token = await messaging.getToken();
+      if (token != null) {
+        await _deviceTokenApiService.register(token);
+      }
+      _tokenRefreshSub = messaging.onTokenRefresh.listen(_deviceTokenApiService.register);
+
+      FirebaseMessaging.onMessage.listen(_foregroundMessageController.add);
     } catch (_) {
-      // Belum di-setup (lihat catatan di TASKS.md Fase 6) — lewati diam-diam.
+      // Firebase belum/gagal dikonfigurasi — lewati diam-diam, sisa app tetap jalan.
       return;
     }
 
     _initialized = true;
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(alert: true, badge: true, sound: true);
-
-    final token = await messaging.getToken();
-    if (token != null) {
-      await _deviceTokenApiService.register(token);
-    }
-    _tokenRefreshSub = messaging.onTokenRefresh.listen(_deviceTokenApiService.register);
-
-    FirebaseMessaging.onMessage.listen(_foregroundMessageController.add);
   }
 
   void dispose() {

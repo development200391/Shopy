@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "102336053435",
+    "firebase_url": "https://test-65e03.firebaseio.com",
+    "project_id": "test-65e03",
+    "storage_bucket": "test-65e03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:102336053435:android:356b1bb66442ea1e94299e",
+        "android_client_info": {
+          "package_name": "com.shopy.shopy_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhDNtiCKVCOTgHpcPKkxlYoKFLKjnlMeg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
