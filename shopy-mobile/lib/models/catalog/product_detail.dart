@@ -11,6 +11,9 @@ class ProductDetail {
   final int ratingCount;
   final String categoryId;
   final String categoryName;
+  final String storeId;
+  final String storeName;
+  final String storeSlug;
 
   const ProductDetail({
     required this.id,
@@ -24,6 +27,9 @@ class ProductDetail {
     required this.ratingCount,
     required this.categoryId,
     required this.categoryName,
+    required this.storeId,
+    required this.storeName,
+    required this.storeSlug,
   });
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) {
@@ -39,6 +45,9 @@ class ProductDetail {
       ratingCount: json['ratingCount'] as int,
       categoryId: json['categoryId'] as String,
       categoryName: json['categoryName'] as String,
+      storeId: json['storeId'] as String,
+      storeName: json['storeName'] as String,
+      storeSlug: json['storeSlug'] as String,
     );
   }
 }

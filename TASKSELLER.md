@@ -103,7 +103,7 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
   - `screens/store/open_store_screen.dart` — wizard 3 langkah dalam 1 `PageView` + step indicator custom (lingkaran nomor + garis, meniru mockup). Langkah 1 "Data Toko" sesuai mockup **kecuali field "Kategori Toko"** ⚠️ (dilewati — tidak ada field kategori di skema `Store` Fase 0, konsisten dengan pola project ini yang banyak melewati elemen mockup yang backend-nya belum ada). Tombol "Unggah Logo Toko" & catatan di langkah 3 "Verifikasi" sengaja belum fungsional ⚠️ (infrastruktur upload file baru Fase 2) — cuma snackbar/catatan info, sama pola seperti tombol social login di app pembeli. Langkah 2 "Alamat" & 3 "Verifikasi" didesain sendiri (tidak ada mockup terpisah), pakai token desain yang sama.
   - `screens/store/awaiting_verification_screen.dart` — dipakai untuk status `Pending` maupun varian blokir `Suspended`/`Closed` (pesan beda per status, bukan file terpisah).
-  - `screens/dashboard/dashboard_placeholder_screen.dart` — placeholder untuk toko `Active`, pola sama persis seperti Home placeholder `shopy-mobile` Fase 1 (dashboard asli baru Fase 8).
+  - `screens/dashboard/dashboard_placeholder_screen.dart` — placeholder untuk toko `Active`, pola sama persis seperti Home placeholder `shopy-mobile` Fase 1 (dashboard asli baru Fase 8). **Sudah digantikan** `StoreProfileScreen` di Fase 2 (file placeholder ini dihapus) — dashboard sungguhan tetap menyusul Fase 8.
 - [x] Flutter: `authProvider` + `storeProvider` (Riverpod), token disimpan di `flutter_secure_storage`
   - `providers/auth_provider.dart` disalin dari app pembeli + method baru `refreshSessionFrom()` (dipakai setelah buka toko sukses). Bukan `storeProvider` melainkan `providers/seller_provider.dart` → `sellerMeProvider` (`FutureProvider`, sumber kebenaran status toko selalu dari `GET /api/seller/me`, bukan dari claim JWT lokal yang bisa basi). Routing terpusat di `routing/post_auth_router.dart` (`navigateAfterAuth`), dipanggil dari Splash, Login, Register, dan setelah submit Buka Toko — supaya logic-nya tidak terduplikasi 4 tempat.
   - Wizard form Buka Toko sengaja **tidak** pakai `NotifierProvider` terpisah — state field disimpan di `TextEditingController` lokal widget, konsisten dengan pola form lain di app pembeli (`login_screen.dart`, dst).
@@ -112,18 +112,32 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 2 — Profil & Pengaturan Toko
 
-- [ ] Backend: **infrastruktur upload file** `POST /api/uploads` (validasi tipe & ukuran, simpan ke `wwwroot/uploads` untuk dev + abstraksi `IFileStorage` supaya gampang pindah ke S3/Cloudinary saat deploy) — ini prasyarat logo toko, foto produk, bukti kirim, dan dokumen verifikasi
-- [ ] Backend: `GET /api/seller/store`, `PUT /api/seller/store` (nama, deskripsi, logo, banner, kontak), `PATCH /api/seller/store/open` (buka/tutup toko)
-- [ ] Backend: CRUD `StoreAddresses` (alamat pickup) `GET/POST/PUT/DELETE /api/seller/store/addresses` + set default
-- [ ] Backend: CRUD `BankAccounts` `GET/POST/DELETE /api/seller/bank-accounts` + set default
-- [ ] Backend: upload `StoreDocuments` untuk verifikasi + endpoint admin approve/reject (lihat Fase 9)
-- [ ] Backend (publik): `GET /api/stores/{slug}` (profil toko untuk app pembeli) + `GET /api/stores/{slug}/products`
-- [ ] Flutter: halaman **Profil & Pengaturan Toko** (statistik ringkas, toggle buka/tutup toko, menu ke semua submenu, keluar akun)
+- [x] Backend: **infrastruktur upload file** `POST /api/uploads` (validasi tipe & ukuran, simpan ke `wwwroot/uploads` untuk dev + abstraksi `IFileStorage` supaya gampang pindah ke S3/Cloudinary saat deploy) — ini prasyarat logo toko, foto produk, bukti kirim, dan dokumen verifikasi
+  - `Services/IFileStorage.cs` + `LocalFileStorage.cs`, `Controllers/UploadsController.cs` (`POST /api/uploads?category=logo|banner|document`, maks 5MB, validasi content-type per kategori). `app.UseStaticFiles()` ditambah di `Program.cs`, folder `wwwroot/uploads/` (isi digitignore, struktur dipertahankan lewat `.gitkeep`).
+  - ⚠️ **URL disimpan relatif** (mis. `/uploads/logo/xxx.png`), bukan absolut — client (kedua app Flutter) yang menggabungkan `resolveApiBaseUrl() + url` saat render `Image.network`, supaya tidak bergantung host/port tertentu (device fisik vs emulator vs web beda-beda, lihat catatan `adb reverse` sebelumnya).
+  - Diuji lewat `curl -F`: upload logo sukses, file ke-serve balik lewat `UseStaticFiles()` (200).
+- [x] Backend: `GET /api/seller/store`, `PUT /api/seller/store` (nama, deskripsi, logo, banner, kontak), `PATCH /api/seller/store/open` (buka/tutup toko)
+  - Ditambahkan ke `Controllers/SellerController.cs`, semua pakai `[Authorize(Roles = "Seller")]` (beda dari 3 endpoint Fase 1 yang masih `[Authorize]` polos — role sudah pasti ada sejak toko dibuka).
+- [x] Backend: CRUD `StoreAddresses` (alamat pickup) `GET/POST/PUT/DELETE /api/seller/store/addresses` + set default
+  - `Controllers/SellerStoreAddressesController.cs` — pola identik `AddressesController.cs` (app pembeli), scoped ke `StoreId` bukan `UserId`.
+- [x] Backend: CRUD `BankAccounts` `GET/POST/DELETE /api/seller/bank-accounts` + set default
+  - `Controllers/SellerBankAccountsController.cs`, pola sama.
+- [x] Backend: upload `StoreDocuments` untuk verifikasi + endpoint admin approve/reject (lihat Fase 9)
+  - `POST`/`GET /api/seller/store/documents` di `SellerController.cs`. Bagian admin approve/reject memang belum dikerjakan (menunggu Fase 9, sesuai catatan dokumen).
+  - ⚠️ **Belum ada halaman Flutter untuk upload dokumen** — checklist Flutter Fase 2 di bawah memang tidak menyebutnya, jadi disusul kapan Fase 9 (verifikasi admin) benar-benar butuh dipakai. Endpoint generik `POST /api/uploads?category=document` sudah siap dipakai nanti.
+- [x] Backend (publik): `GET /api/stores/{slug}` (profil toko untuk app pembeli) + `GET /api/stores/{slug}/products`
+  - `Controllers/StoresController.cs` (tanpa `[Authorize]`). ⚠️ **Toko yang belum `Active` sengaja 404** di endpoint ini (tidak ditulis eksplisit di dokumen, tapi masuk akal — pembeli tidak perlu lihat toko yang belum diverifikasi). Sekalian menambahkan `StoreId`/`StoreName`/`StoreSlug` ke `ProductListItemDto`/`ProductDetailDto` (`Models/Catalog/CatalogDtos.cs`) — **ini mengerjakan lebih dulu item Fase 3 baris "tambahkan storeId/storeName ke DTO produk publik"**, sudah dicentang di sana juga.
+  - Diuji lengkap lewat `curl`: toko `Pending` → 404, diubah `Active` via psql → 200, `GET .../products` mengembalikan produk toko itu saja, `GET /api/products` (endpoint lama) masih 200 dengan field baru tanpa breaking field lama.
+- [x] Flutter: halaman **Profil & Pengaturan Toko** (statistik ringkas, toggle buka/tutup toko, menu ke semua submenu, keluar akun)
 
   ![Mockup Profil Toko - Bold & Colorful](./shopy-seller/design/assets/profil-toko-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman Edit Profil Toko, Alamat & Pengiriman, Rekening Bank
+  - `screens/store/store_profile_screen.dart` — menggantikan `DashboardPlaceholderScreen` Fase 1 sebagai landing toko `Active`. Statistik (Produk/Pengikut/Rating) dibaca dari field denormalized `Store` (`ProductCount`/`FollowerCount`/`RatingAverage`) — masih 0 buat toko baru karena belum ada mekanisme yang menambahnya (baru terisi mulai Fase 3+). Badge "Toko Terverifikasi" cuma muncul kalau `Status == Active`. Menu 3 item fungsional (Edit Profil, Alamat, Rekening) + 5 placeholder (Keuangan/Statistik/Promo/Ulasan/Notifikasi — semua Fase 5-8, tap-nya snackbar "belum tersedia").
+- [x] Flutter: halaman Edit Profil Toko, Alamat & Pengiriman, Rekening Bank
+  - `screens/store/edit_store_profile_screen.dart` — form + 2 `image_picker` (logo/banner), upload ke `POST /api/uploads` lalu simpan URL-nya, submit `PUT /api/seller/store`. `screens/store/store_addresses_screen.dart` & `bank_accounts_screen.dart` — list + bottom sheet tambah (pola sama `address_form_sheet.dart` app pembeli) + hapus + jadikan utama.
 - ⚠️ Perubahan di app pembeli (`shopy-mobile`): halaman Detail Produk perlu menampilkan kartu info toko + tombol "Kunjungi Toko", dan perlu halaman Profil Toko publik.
+  - **Disertakan di Fase 2 ini** (bukan ditunda) — `product_detail_screen.dart` dapat kartu toko (nama + "Kunjungi Toko") sebelum bagian deskripsi, navigasi ke `screens/stores/store_profile_screen.dart` (baru — banner, logo, rating, stats, grid produk toko pakai `ProductCard` yang sudah ada). Model `ProductSummary`/`ProductDetail` di-extend dengan `storeId`/`storeName`/`storeSlug` (ikut update `test/home_screen_test.dart` yang bikin `ProductSummary` manual).
+- ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error. `flutter analyze` + `flutter test` bersih di **kedua** app (`shopy-seller` & `shopy-mobile`). Belum sempat dites visual manual di browser/device asli (sama seperti catatan Fase 1) — coba `flutter run -d chrome` di kedua folder kalau mau verifikasi visual.
 
 ## Fase 3 — Manajemen Produk
 
@@ -132,7 +146,7 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 - [ ] Backend: `PUT /api/seller/products/{id}`, `DELETE /api/seller/products/{id}` (soft delete), `PATCH /api/seller/products/{id}/active` (toggle tayang)
 - [ ] Backend: `PATCH /api/seller/products/bulk` — update stok & harga banyak produk sekaligus
 - [ ] Backend: `GET /api/seller/products/low-stock` (ambang batas bisa diatur, dipakai dashboard & notifikasi)
-- [ ] Backend: tambahkan `storeId`/`storeName` ke DTO produk publik (`Models/Catalog/CatalogDtos.cs`) supaya app pembeli bisa menampilkan asal toko
+- [x] Backend: tambahkan `storeId`/`storeName` ke DTO produk publik (`Models/Catalog/CatalogDtos.cs`) supaya app pembeli bisa menampilkan asal toko — **sudah dikerjakan di Fase 2** (jadi prasyarat endpoint publik `GET /api/stores/{slug}/products` & kartu toko di Detail Produk), ikut ditambah `storeSlug` juga (tidak diminta eksplisit di baris ini, tapi diperlukan buat link "Kunjungi Toko")
 - [ ] Flutter: halaman **Daftar Produk** (tab Semua/Aktif/Nonaktif/Habis, toggle tayang, badge stok menipis, aksi ubah/hapus, FAB tambah produk)
 
   ![Mockup Daftar Produk - Bold & Colorful](./shopy-seller/design/assets/produk-list-seller-bold-colorful.png)

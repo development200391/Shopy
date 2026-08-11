@@ -30,3 +30,74 @@ public record SellerMeResponse(
     string Email,
     string FullName,
     StoreSummaryDto? Store);
+
+public record StoreDetailDto(
+    Guid Id,
+    string Name,
+    string Slug,
+    string? Description,
+    string? LogoUrl,
+    string? BannerUrl,
+    string? PhoneNumber,
+    string Status,
+    bool IsOpen,
+    decimal RatingAverage,
+    int RatingCount,
+    int ProductCount,
+    int FollowerCount);
+
+public record UpdateStoreRequest(
+    string Name,
+    string? Description,
+    string? LogoUrl,
+    string? BannerUrl,
+    string? PhoneNumber);
+
+public record SetStoreOpenRequest(bool IsOpen);
+
+public record StoreAddressDto(
+    Guid Id,
+    string Label,
+    string PicName,
+    string PhoneNumber,
+    string FullAddress,
+    string City,
+    string Province,
+    string PostalCode,
+    bool IsDefault);
+
+public record SaveStoreAddressRequest(
+    string Label,
+    string PicName,
+    string PhoneNumber,
+    string FullAddress,
+    string City,
+    string Province,
+    string PostalCode,
+    bool IsDefault = false);
+
+public record BankAccountDto(
+    Guid Id,
+    string BankCode,
+    string BankName,
+    string AccountNumber,
+    string AccountHolderName,
+    bool IsVerified,
+    bool IsDefault);
+
+public record SaveBankAccountRequest(
+    string BankCode,
+    string BankName,
+    string AccountNumber,
+    string AccountHolderName,
+    bool IsDefault = false);
+
+public record StoreDocumentDto(
+    Guid Id,
+    string Type,
+    string FileUrl,
+    string Status,
+    string? RejectReason,
+    DateTime? ReviewedAt);
+
+public record CreateStoreDocumentRequest(string Type, string FileUrl);

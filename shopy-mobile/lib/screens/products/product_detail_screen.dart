@@ -9,6 +9,7 @@ import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/shared/placeholder_thumbnail.dart';
 import '../../widgets/wishlist/wishlist_toggle_button.dart';
+import '../stores/store_profile_screen.dart';
 
 /// Halaman Detail Produk. Desain terpilih: **Bold & Colorful** (lihat
 /// `design/assets/product-detail-bold-colorful.png`).
@@ -106,6 +107,8 @@ class _ProductDetailBody extends ConsumerWidget {
                           color: AppColors.primary,
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.md),
+                      _StoreInfoCard(product: product),
                       const SizedBox(height: AppSpacing.md),
                       const Divider(),
                       const SizedBox(height: AppSpacing.sm),
@@ -226,6 +229,53 @@ class _CategoryTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(name, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12)),
+    );
+  }
+}
+
+class _StoreInfoCard extends StatelessWidget {
+  final ProductDetail product;
+
+  const _StoreInfoCard({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => StoreProfileScreen(slug: product.storeSlug)),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.divider),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.storefront_outlined, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                product.storeName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Text('Kunjungi Toko', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+            const Icon(Icons.chevron_right, color: AppColors.primary, size: 18),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -131,9 +131,121 @@ public class SellerController(
         return Ok(ToDto(store));
     }
 
+    [Authorize(Roles = "Seller")]
+    [HttpGet("store")]
+    public async Task<ActionResult<StoreDetailDto>> GetStore()
+    {
+        var store = await GetMyStoreAsync();
+        if (store is null)
+        {
+            return NotFound(new { message = "Kamu belum punya toko." });
+        }
+
+        return Ok(ToDetailDto(store));
+    }
+
+    [Authorize(Roles = "Seller")]
+    [HttpPut("store")]
+    public async Task<ActionResult<StoreDetailDto>> UpdateStore(UpdateStoreRequest request)
+    {
+        var store = await GetMyStoreAsync();
+        if (store is null)
+        {
+            return NotFound(new { message = "Kamu belum punya toko." });
+        }
+
+        store.Name = request.Name;
+        store.Description = request.Description;
+        store.LogoUrl = request.LogoUrl;
+        store.BannerUrl = request.BannerUrl;
+        store.PhoneNumber = request.PhoneNumber;
+        store.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+        return Ok(ToDetailDto(store));
+    }
+
+    [Authorize(Roles = "Seller")]
+    [HttpPatch("store/open")]
+    public async Task<ActionResult<StoreDetailDto>> SetStoreOpen(SetStoreOpenRequest request)
+    {
+        var store = await GetMyStoreAsync();
+        if (store is null)
+        {
+            return NotFound(new { message = "Kamu belum punya toko." });
+        }
+
+        store.IsOpen = request.IsOpen;
+        store.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+        return Ok(ToDetailDto(store));
+    }
+
+    [Authorize(Roles = "Seller")]
+    [HttpGet("store/documents")]
+    public async Task<ActionResult<IReadOnlyList<StoreDocumentDto>>> GetDocuments()
+    {
+        var store = await GetMyStoreAsync();
+        if (store is null)
+        {
+            return NotFound(new { message = "Kamu belum punya toko." });
+        }
+
+        var documents = await dbContext.StoreDocuments
+            .Where(d => d.StoreId == store.Id)
+            .OrderByDescending(d => d.Id)
+            .Select(d => new StoreDocumentDto(d.Id, d.Type.ToString(), d.FileUrl, d.Status.ToString(), d.RejectReason, d.ReviewedAt))
+            .ToListAsync();
+
+        return Ok(documents);
+    }
+
+    [Authorize(Roles = "Seller")]
+    [HttpPost("store/documents")]
+    public async Task<ActionResult<StoreDocumentDto>> CreateDocument(CreateStoreDocumentRequest request)
+    {
+        var store = await GetMyStoreAsync();
+        if (store is null)
+        {
+            return NotFound(new { message = "Kamu belum punya toko." });
+        }
+
+        if (!Enum.TryParse<StoreDocumentType>(request.Type, out var type))
+        {
+            return BadRequest(new { message = "Jenis dokumen tidak dikenal." });
+        }
+
+        var document = new StoreDocument
+        {
+            Id = Guid.NewGuid(),
+            StoreId = store.Id,
+            Type = type,
+            FileUrl = request.FileUrl,
+            Status = DocumentReviewStatus.Pending,
+        };
+        dbContext.StoreDocuments.Add(document);
+        await dbContext.SaveChangesAsync();
+
+        return Ok(new StoreDocumentDto(
+            document.Id, document.Type.ToString(), document.FileUrl, document.Status.ToString(),
+            document.RejectReason, document.ReviewedAt));
+    }
+
+    private Task<Store?> GetMyStoreAsync()
+    {
+        var userId = User.GetUserId();
+        return dbContext.Stores.SingleOrDefaultAsync(s => s.OwnerUserId == userId);
+    }
+
     private static StoreSummaryDto? ToDto(Store? store) => store is null
         ? null
         : new StoreSummaryDto(
             store.Id, store.Name, store.Slug, store.Description, store.LogoUrl,
             store.PhoneNumber, store.Status.ToString(), store.IsOpen);
+
+    private static StoreDetailDto ToDetailDto(Store store) => new(
+        store.Id, store.Name, store.Slug, store.Description, store.LogoUrl, store.BannerUrl,
+        store.PhoneNumber, store.Status.ToString(), store.IsOpen, store.RatingAverage, store.RatingCount,
+        store.ProductCount, store.FollowerCount);
 }

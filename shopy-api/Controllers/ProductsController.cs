@@ -64,7 +64,8 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
             .Take(pageSize)
             .Select(p => new ProductListItemDto(
                 p.Id, p.Name, p.Slug, p.Price, p.ImageUrl,
-                p.RatingAverage, p.RatingCount, p.CategoryId, p.Category.Name))
+                p.RatingAverage, p.RatingCount, p.CategoryId, p.Category.Name,
+                p.StoreId, p.Store.Name, p.Store.Slug))
             .ToListAsync();
 
         return Ok(new PagedResult<ProductListItemDto>(items, page, pageSize, totalCount));
@@ -75,6 +76,7 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
     {
         var product = await dbContext.Products
             .Include(p => p.Category)
+            .Include(p => p.Store)
             .Where(p => p.IsActive)
             .SingleOrDefaultAsync(p => p.Slug == slug);
 
@@ -86,7 +88,8 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
         var dto = new ProductDetailDto(
             product.Id, product.Name, product.Slug, product.Description, product.Price,
             product.Stock, product.ImageUrl, product.RatingAverage, product.RatingCount,
-            product.CategoryId, product.Category.Name, product.CreatedAt);
+            product.CategoryId, product.Category.Name, product.CreatedAt,
+            product.StoreId, product.Store.Name, product.Store.Slug);
 
         return Ok(dto);
     }

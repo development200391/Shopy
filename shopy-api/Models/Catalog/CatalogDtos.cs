@@ -24,7 +24,10 @@ public record ProductListItemDto(
     decimal RatingAverage,
     int RatingCount,
     Guid CategoryId,
-    string CategoryName);
+    string CategoryName,
+    Guid StoreId,
+    string StoreName,
+    string StoreSlug);
 
 public record ProductDetailDto(
     Guid Id,
@@ -38,7 +41,10 @@ public record ProductDetailDto(
     int RatingCount,
     Guid CategoryId,
     string CategoryName,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Guid StoreId,
+    string StoreName,
+    string StoreSlug);
 
 public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 

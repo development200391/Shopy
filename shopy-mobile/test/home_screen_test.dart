@@ -56,6 +56,9 @@ void main() {
         ratingCount: 120,
         categoryId: 'cat-1',
         categoryName: 'Elektronik',
+        storeId: 'store-1',
+        storeName: 'Toko Demo',
+        storeSlug: 'toko-demo',
       ),
     ];
 

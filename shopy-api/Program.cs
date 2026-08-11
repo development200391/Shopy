@@ -44,6 +44,7 @@ builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IFacebookAuthService, FacebookAuthService>();
 builder.Services.AddScoped<IMidtransService, MidtransService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 // Singleton karena FirebaseApp cuma boleh dibuat sekali per proses.
 builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
 builder.Services.AddHttpClient();
@@ -97,6 +98,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
