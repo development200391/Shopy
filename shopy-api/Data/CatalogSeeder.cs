@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using shopy_api.Models;
 
@@ -7,7 +8,12 @@ namespace shopy_api.Data;
 // Hanya jalan di environment Development dan hanya kalau tabel Categories masih kosong.
 public static class CatalogSeeder
 {
-    public static async Task SeedAsync(ShopyDbContext dbContext)
+    // Akun toko demo dev-only — password sengaja hardcode di sini seperti akun test@shopy.com,
+    // BUKAN untuk dipakai di production (seeder ini cuma jalan saat Environment.IsDevelopment()).
+    private const string DemoSellerEmail = "seller-demo@shopy.com";
+    private const string DemoSellerPassword = "SellerDemo1234!";
+
+    public static async Task SeedAsync(ShopyDbContext dbContext, UserManager<ApplicationUser> userManager)
     {
         if (await dbContext.Categories.AnyAsync())
         {
@@ -26,21 +32,67 @@ public static class CatalogSeeder
         dbContext.Categories.AddRange(
             elektronik, handphone, laptop, fashion, fashionPria, fashionWanita, rumahTangga, olahraga);
 
+        var storeId = await EnsureDemoStoreAsync(dbContext, userManager);
+
         dbContext.Products.AddRange(
-            NewProduct(handphone.Id, "Smartphone X100", "smartphone-x100", 2_999_000, 25, 4.5m, 120),
-            NewProduct(handphone.Id, "Smartphone Y200", "smartphone-y200", 4_499_000, 15, 4.2m, 87),
-            NewProduct(laptop.Id, "Laptop Ultrabook 14\"", "laptop-ultrabook-14", 8_999_000, 10, 4.7m, 54),
-            NewProduct(laptop.Id, "Laptop Gaming 15\"", "laptop-gaming-15", 15_499_000, 8, 4.6m, 39),
-            NewProduct(fashionPria.Id, "Kemeja Flanel Pria", "kemeja-flanel-pria", 189_000, 60, 4.3m, 210),
-            NewProduct(fashionPria.Id, "Celana Chino Pria", "celana-chino-pria", 229_000, 45, 4.1m, 95),
-            NewProduct(fashionWanita.Id, "Dress Casual Wanita", "dress-casual-wanita", 259_000, 40, 4.4m, 150),
-            NewProduct(fashionWanita.Id, "Blouse Wanita", "blouse-wanita", 149_000, 55, 4.0m, 72),
-            NewProduct(rumahTangga.Id, "Blender Multifungsi", "blender-multifungsi", 349_000, 30, 4.6m, 66),
-            NewProduct(rumahTangga.Id, "Rice Cooker Digital", "rice-cooker-digital", 459_000, 20, 4.5m, 88),
-            NewProduct(olahraga.Id, "Sepatu Lari Pro", "sepatu-lari-pro", 599_000, 35, 4.8m, 132),
-            NewProduct(olahraga.Id, "Matras Yoga", "matras-yoga", 129_000, 50, 4.3m, 44));
+            NewProduct(storeId, handphone.Id, "Smartphone X100", "smartphone-x100", 2_999_000, 25, 4.5m, 120),
+            NewProduct(storeId, handphone.Id, "Smartphone Y200", "smartphone-y200", 4_499_000, 15, 4.2m, 87),
+            NewProduct(storeId, laptop.Id, "Laptop Ultrabook 14\"", "laptop-ultrabook-14", 8_999_000, 10, 4.7m, 54),
+            NewProduct(storeId, laptop.Id, "Laptop Gaming 15\"", "laptop-gaming-15", 15_499_000, 8, 4.6m, 39),
+            NewProduct(storeId, fashionPria.Id, "Kemeja Flanel Pria", "kemeja-flanel-pria", 189_000, 60, 4.3m, 210),
+            NewProduct(storeId, fashionPria.Id, "Celana Chino Pria", "celana-chino-pria", 229_000, 45, 4.1m, 95),
+            NewProduct(storeId, fashionWanita.Id, "Dress Casual Wanita", "dress-casual-wanita", 259_000, 40, 4.4m, 150),
+            NewProduct(storeId, fashionWanita.Id, "Blouse Wanita", "blouse-wanita", 149_000, 55, 4.0m, 72),
+            NewProduct(storeId, rumahTangga.Id, "Blender Multifungsi", "blender-multifungsi", 349_000, 30, 4.6m, 66),
+            NewProduct(storeId, rumahTangga.Id, "Rice Cooker Digital", "rice-cooker-digital", 459_000, 20, 4.5m, 88),
+            NewProduct(storeId, olahraga.Id, "Sepatu Lari Pro", "sepatu-lari-pro", 599_000, 35, 4.8m, 132),
+            NewProduct(storeId, olahraga.Id, "Matras Yoga", "matras-yoga", 129_000, 50, 4.3m, 44));
 
         await dbContext.SaveChangesAsync();
+    }
+
+    // Semua produk seeder butuh StoreId (wajib sejak TASKSELLER.md Fase 0) — belum ada alur
+    // registrasi seller asli (baru Fase 1), jadi dibuatkan 1 akun + toko demo di sini.
+    private static async Task<Guid> EnsureDemoStoreAsync(ShopyDbContext dbContext, UserManager<ApplicationUser> userManager)
+    {
+        var existingStore = await dbContext.Stores.FirstOrDefaultAsync();
+        if (existingStore is not null)
+        {
+            return existingStore.Id;
+        }
+
+        var ownerUser = await userManager.FindByEmailAsync(DemoSellerEmail);
+        if (ownerUser is null)
+        {
+            ownerUser = new ApplicationUser
+            {
+                UserName = DemoSellerEmail,
+                Email = DemoSellerEmail,
+                FullName = "Toko Demo Shopy",
+                CreatedAt = DateTime.UtcNow,
+            };
+            var result = await userManager.CreateAsync(ownerUser, DemoSellerPassword);
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Gagal membuat akun seller demo: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        var store = new Store
+        {
+            Id = Guid.NewGuid(),
+            OwnerUserId = ownerUser.Id,
+            Name = "Toko Demo Shopy",
+            Slug = "toko-demo-shopy",
+            Description = "Toko contoh untuk pengembangan Shopy Seller.",
+            Status = StoreStatus.Active,
+            IsOpen = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        dbContext.Stores.Add(store);
+        return store.Id;
     }
 
     private static Category NewCategory(string name, string slug, Guid? parentCategoryId = null) => new()
@@ -53,9 +105,10 @@ public static class CatalogSeeder
     };
 
     private static Product NewProduct(
-        Guid categoryId, string name, string slug, decimal price, int stock, decimal ratingAverage, int ratingCount) => new()
+        Guid storeId, Guid categoryId, string name, string slug, decimal price, int stock, decimal ratingAverage, int ratingCount) => new()
     {
         Id = Guid.NewGuid(),
+        StoreId = storeId,
         CategoryId = categoryId,
         Name = name,
         Slug = slug,

@@ -85,7 +85,9 @@ if (app.Environment.IsDevelopment())
     });
 
     using var seedScope = app.Services.CreateScope();
-    await CatalogSeeder.SeedAsync(seedScope.ServiceProvider.GetRequiredService<ShopyDbContext>());
+    await CatalogSeeder.SeedAsync(
+        seedScope.ServiceProvider.GetRequiredService<ShopyDbContext>(),
+        seedScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>());
 }
 
 app.UseHttpsRedirection();

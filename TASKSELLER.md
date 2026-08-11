@@ -37,34 +37,46 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 0 — Persiapan & Skema Data
 
-- [ ] Buat app Flutter baru `shopy-seller` di root monorepo (`flutter create`), **tanpa `.git` terpisah** — konsisten dengan `shopy-mobile`/`shopy-api`
-- [ ] Salin/ekstrak design system dari `shopy-mobile/lib/theme/` (`AppColors`, `AppTypography`, `AppSpacing`, `AppTheme`) — opsi: jadikan package lokal `packages/shopy_ui` supaya tidak dobel maintain
-- [ ] Salin pola infrastruktur dari `shopy-mobile`: `services/api_client.dart` (interceptor auto-refresh token), `services/token_storage_service.dart`, struktur `providers/` + `models/` + `screens/` + `widgets/`
-- [ ] Tambah dependency: `flutter_riverpod`, `dio`, `flutter_secure_storage`, `google_fonts`, `flutter_svg`, `image_picker`, `firebase_core`, `firebase_messaging`, `fl_chart` (grafik statistik)
-- [ ] Desain skema database seller — ketentuan umum tetap sama: **semua tabel pakai soft delete** (`IsDeleted bool`, default `false`)
-  - [ ] Table `Stores`: `Id`, `OwnerUserId` (FK `AspNetUsers`, unique — 1 user = 1 toko), `Name`, `Slug` (unique), `Description`, `LogoUrl`, `BannerUrl`, `PhoneNumber`, `Status` (enum: `Pending`/`Active`/`Suspended`/`Closed`), `IsOpen` (buka/tutup toko), `RatingAverage`, `RatingCount`, `ProductCount`, `FollowerCount`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Table `StoreAddresses` (alamat pickup / asal pengiriman): `Id`, `StoreId` (FK), `Label`, `PicName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode`, `IsDefault`, `IsDeleted`
-  - [ ] Table `StoreDocuments` (verifikasi toko): `Id`, `StoreId` (FK), `Type` (enum: `Ktp`/`Npwp`/`Nib`), `FileUrl`, `Status` (`Pending`/`Approved`/`Rejected`), `RejectReason`, `ReviewedAt`, `IsDeleted`
-  - [ ] Ubah `Products`: tambah `StoreId` (FK **wajib**), `Weight` (gram), `Condition` (enum `New`/`Used`), `SoldCount`, `ViewCount`, `DiscountPrice` (nullable), `DiscountStartAt`/`DiscountEndAt`
-  - [ ] Table `ProductImages`: `Id`, `ProductId` (FK), `Url`, `SortOrder`, `IsPrimary`, `IsDeleted` — menggantikan `Product.ImageUrl` tunggal (kolom lama dipertahankan dulu sebagai cache gambar utama supaya app pembeli tidak langsung rusak)
-  - [ ] Table `SubOrders`: `Id`, `OrderId` (FK), `StoreId` (FK), `SubOrderNumber` (unique, mis. `SHP-20260810-0142-1`), `Status` (enum: `WaitingPayment`/`NewOrder`/`Processing`/`Shipped`/`Completed`/`Cancelled`/`Rejected`), `Subtotal`, `ShippingCost`, `VoucherDiscount`, `CommissionAmount`, `SellerEarning`, `CourierCode`, `CourierService`, `TrackingNumber`, `ShippedAt`, `CompletedAt`, `AutoCancelAt`, `CancelReason`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
-  - [ ] Ubah `OrderItems`: tambah `SubOrderId` (FK) — item tetap tergantung ke `Order` untuk kompatibilitas, tapi dikelompokkan per sub-order
-  - [ ] Table `SubOrderStatusHistories` (pengganti/pendamping `OrderStatusHistories`): `Id`, `SubOrderId`, `Status`, `Note`, `ChangedByUserId`, `ChangedAt`
-  - [ ] `Orders.Status` jadi **status agregat** hasil turunan sub-order (mis. semua sub-order `Completed` → order `Completed`)
-  - [ ] Table `StoreBalances`: `StoreId` (PK/FK), `AvailableBalance`, `PendingBalance`, `TotalEarning`, `UpdatedAt`
-  - [ ] Table `BalanceTransactions` (mutasi saldo): `Id`, `StoreId` (FK), `Type` (enum: `SaleIncome`/`Commission`/`Withdrawal`/`WithdrawalFee`/`Refund`/`Adjustment`), `Amount` (signed), `BalanceAfter`, `SubOrderId` (nullable), `WithdrawalId` (nullable), `Description`, `CreatedAt`
-  - [ ] Table `BankAccounts`: `Id`, `StoreId` (FK), `BankCode`, `BankName`, `AccountNumber`, `AccountHolderName`, `IsVerified`, `IsDefault`, `IsDeleted`
-  - [ ] Table `Withdrawals`: `Id`, `StoreId` (FK), `BankAccountId` (FK), `Amount`, `AdminFee`, `NetAmount`, `Status` (`Pending`/`Processing`/`Completed`/`Rejected`), `RejectReason`, `RequestedAt`, `ProcessedAt`, `IsDeleted`
-  - [ ] Table `Vouchers` (voucher toko): `Id`, `StoreId` (FK), `Code`, `Type` (enum: `Percentage`/`FixedAmount`/`FreeShipping`), `Value`, `MaxDiscount`, `MinPurchase`, `Quota`, `UsedCount`, `StartAt`, `EndAt`, `IsActive`, `IsDeleted` — unique `(StoreId, Code)`
-  - [ ] Table `VoucherUsages`: `Id`, `VoucherId` (FK), `UserId` (FK), `SubOrderId` (FK), `DiscountAmount`, `UsedAt`
-  - [ ] Table `FlashSales` + `FlashSaleItems` (opsional, untuk tab Flash Sale): periode, produk, harga khusus, kuota
-  - [ ] Table `ChatRooms`: `Id`, `StoreId` (FK), `BuyerUserId` (FK), `LastMessageAt`, `LastMessagePreview`, `UnreadCountSeller`, `UnreadCountBuyer`, `CreatedAt`, `IsDeleted` — unique `(StoreId, BuyerUserId)`
-  - [ ] Table `ChatMessages`: `Id`, `ChatRoomId` (FK), `SenderType` (enum `Buyer`/`Seller`), `SenderUserId`, `Body`, `AttachmentUrl`, `ProductId` (nullable), `SubOrderId` (nullable), `ReadAt`, `CreatedAt`, `IsDeleted`
-  - [ ] Ubah `Reviews`: tambah `StoreId`, `SubOrderId`, `SellerReply`, `SellerRepliedAt`, `ImageUrls` (atau tabel `ReviewImages`)
-  - [ ] Table `StoreFollowers` (opsional, untuk angka "Pengikut" di profil toko): `Id`, `StoreId`, `UserId`, `CreatedAt`
-- [ ] Migrasi data lama: buat 1 "toko demo" lalu assign semua produk seeder (`Data/CatalogSeeder.cs`) ke toko itu, dan generate `SubOrders` untuk `Orders` yang sudah ada — **jalankan sebelum** `StoreId` dijadikan non-nullable
-- [ ] Setup EF Core migration & apply ke database dev (`shopy`/`shopy_dev`)
-- [ ] Konfigurasi baru di `appsettings.json`: `Platform:CommissionPercent` (mis. 2%), `Platform:WithdrawalAdminFee` (mis. Rp2.500), `Platform:MinWithdrawal`, `Platform:AutoCancelHours` (mis. 24 jam), `Platform:AutoCompleteDays` (mis. 3 hari setelah `Shipped`)
+- [x] Buat app Flutter baru `shopy-seller` di root monorepo (`flutter create`), **tanpa `.git` terpisah** — konsisten dengan `shopy-mobile`/`shopy-api`
+  - `flutter create --org com.shopy --project-name shopy_seller .` dijalankan di folder `shopy-seller/` yang sudah ada (isi `design/` mockup tetap aman). Bundle ID `com.shopy.shopySeller` (beda dari `com.shopy.shopyMobile`) supaya bisa ter-install berdampingan di HP yang sama.
+- [x] Salin/ekstrak design system dari `shopy-mobile/lib/theme/` (`AppColors`, `AppTypography`, `AppSpacing`, `AppTheme`) — opsi: jadikan package lokal `packages/shopy_ui` supaya tidak dobel maintain
+  - Dipilih **copy-paste langsung** (bukan package lokal) — konsisten dengan pola project ini (belum pernah ada shared package di monorepo). 4 file disalin apa adanya ke `shopy-seller/lib/theme/`.
+- [x] Salin pola infrastruktur dari `shopy-mobile`: `services/api_client.dart` (interceptor auto-refresh token), `services/token_storage_service.dart`, struktur `providers/` + `models/` + `screens/` + `widgets/`
+  - `api_client.dart`, `token_storage_service.dart`, dan `models/auth/auth_response.dart` disalin apa adanya (login pakai endpoint sama persis, lihat Fase 1). Folder `providers/`, `models/`, `screens/`, `widgets/` dibuat kosong, diisi mulai Fase 1.
+- [x] Tambah dependency: `flutter_riverpod`, `dio`, `flutter_secure_storage`, `google_fonts`, `flutter_svg`, `image_picker`, `firebase_core`, `firebase_messaging`, `fl_chart` (grafik statistik)
+  - Versi disamakan dengan `shopy-mobile` untuk yang sudah ada; `image_picker`/`fl_chart` baru (belum pernah dipakai di `shopy-mobile`). `flutter analyze` & `flutter test` (smoke test) lulus.
+- [x] Desain skema database seller — ketentuan umum tetap sama: **semua tabel pakai soft delete** (`IsDeleted bool`, default `false`)
+  - [x] Table `Stores`: `Id`, `OwnerUserId` (FK `AspNetUsers`, unique — 1 user = 1 toko), `Name`, `Slug` (unique), `Description`, `LogoUrl`, `BannerUrl`, `PhoneNumber`, `Status` (enum: `Pending`/`Active`/`Suspended`/`Closed`), `IsOpen` (buka/tutup toko), `RatingAverage`, `RatingCount`, `ProductCount`, `FollowerCount`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Table `StoreAddresses` (alamat pickup / asal pengiriman): `Id`, `StoreId` (FK), `Label`, `PicName`, `PhoneNumber`, `FullAddress`, `City`, `Province`, `PostalCode`, `IsDefault`, `IsDeleted`
+  - [x] Table `StoreDocuments` (verifikasi toko): `Id`, `StoreId` (FK), `Type` (enum: `Ktp`/`Npwp`/`Nib`), `FileUrl`, `Status` (`Pending`/`Approved`/`Rejected`), `RejectReason`, `ReviewedAt`, `IsDeleted`
+  - [x] Ubah `Products`: tambah `StoreId` (FK **wajib**), `Weight` (gram), `Condition` (enum `New`/`Used`), `SoldCount`, `ViewCount`, `DiscountPrice` (nullable), `DiscountStartAt`/`DiscountEndAt`
+  - [x] Table `ProductImages`: `Id`, `ProductId` (FK), `Url`, `SortOrder`, `IsPrimary`, `IsDeleted` — menggantikan `Product.ImageUrl` tunggal (kolom lama dipertahankan dulu sebagai cache gambar utama supaya app pembeli tidak langsung rusak)
+  - [x] Table `SubOrders`: `Id`, `OrderId` (FK), `StoreId` (FK), `SubOrderNumber` (unique, mis. `SHP-20260810-0142-1`), `Status` (enum: `WaitingPayment`/`NewOrder`/`Processing`/`Shipped`/`Completed`/`Cancelled`/`Rejected`), `Subtotal`, `ShippingCost`, `VoucherDiscount`, `CommissionAmount`, `SellerEarning`, `CourierCode`, `CourierService`, `TrackingNumber`, `ShippedAt`, `CompletedAt`, `AutoCancelAt`, `CancelReason`, `CreatedAt`, `UpdatedAt`, `IsDeleted`
+  - [x] Ubah `OrderItems`: tambah `SubOrderId` (FK) — item tetap tergantung ke `Order` untuk kompatibilitas, tapi dikelompokkan per sub-order
+    - ⚠️ Dibuat **nullable**, bukan wajib — logic checkout yang benar-benar mengelompokkan per toko baru dikerjakan di Fase 4 (refactor checkout).
+  - [x] Table `SubOrderStatusHistories` (pengganti/pendamping `OrderStatusHistories`): `Id`, `SubOrderId`, `Status`, `Note`, `ChangedByUserId`, `ChangedAt`
+  - [x] `Orders.Status` jadi **status agregat** hasil turunan sub-order (mis. semua sub-order `Completed` → order `Completed`)
+    - Tidak ada perubahan skema untuk ini — murni catatan perilaku buat logic Fase 4.
+  - [x] Table `StoreBalances`: `StoreId` (PK/FK), `AvailableBalance`, `PendingBalance`, `TotalEarning`, `UpdatedAt`
+  - [x] Table `BalanceTransactions` (mutasi saldo): `Id`, `StoreId` (FK), `Type` (enum: `SaleIncome`/`Commission`/`Withdrawal`/`WithdrawalFee`/`Refund`/`Adjustment`), `Amount` (signed), `BalanceAfter`, `SubOrderId` (nullable), `WithdrawalId` (nullable), `Description`, `CreatedAt`
+  - [x] Table `BankAccounts`: `Id`, `StoreId` (FK), `BankCode`, `BankName`, `AccountNumber`, `AccountHolderName`, `IsVerified`, `IsDefault`, `IsDeleted`
+  - [x] Table `Withdrawals`: `Id`, `StoreId` (FK), `BankAccountId` (FK), `Amount`, `AdminFee`, `NetAmount`, `Status` (`Pending`/`Processing`/`Completed`/`Rejected`), `RejectReason`, `RequestedAt`, `ProcessedAt`, `IsDeleted`
+  - [x] Table `Vouchers` (voucher toko): `Id`, `StoreId` (FK), `Code`, `Type` (enum: `Percentage`/`FixedAmount`/`FreeShipping`), `Value`, `MaxDiscount`, `MinPurchase`, `Quota`, `UsedCount`, `StartAt`, `EndAt`, `IsActive`, `IsDeleted` — unique `(StoreId, Code)`
+  - [x] Table `VoucherUsages`: `Id`, `VoucherId` (FK), `UserId` (FK), `SubOrderId` (FK), `DiscountAmount`, `UsedAt`
+  - [x] Table `FlashSales` + `FlashSaleItems` (opsional, untuk tab Flash Sale): periode, produk, harga khusus, kuota — **disertakan sekarang** (bukan ditunda)
+  - [x] Table `ChatRooms`: `Id`, `StoreId` (FK), `BuyerUserId` (FK), `LastMessageAt`, `LastMessagePreview`, `UnreadCountSeller`, `UnreadCountBuyer`, `CreatedAt`, `IsDeleted` — unique `(StoreId, BuyerUserId)`
+  - [x] Table `ChatMessages`: `Id`, `ChatRoomId` (FK), `SenderType` (enum `Buyer`/`Seller`), `SenderUserId`, `Body`, `AttachmentUrl`, `ProductId` (nullable), `SubOrderId` (nullable), `ReadAt`, `CreatedAt`, `IsDeleted`
+  - [x] Ubah `Reviews`: tambah `StoreId`, `SubOrderId`, `SellerReply`, `SellerRepliedAt`, `ImageUrls` (atau tabel `ReviewImages`)
+    - Dipilih 1 kolom `ImageUrls` (JSON array string), bukan tabel `ReviewImages` terpisah — belum dipakai sampai `ReviewsController` dibuat di Fase 7.
+  - [x] Table `StoreFollowers` (opsional, untuk angka "Pengikut" di profil toko): `Id`, `StoreId`, `UserId`, `CreatedAt` — **disertakan sekarang** (bukan ditunda)
+- [x] Migrasi data lama: buat 1 "toko demo" lalu assign semua produk seeder (`Data/CatalogSeeder.cs`) ke toko itu, dan generate `SubOrders` untuk `Orders` yang sudah ada — **jalankan sebelum** `StoreId` dijadikan non-nullable
+  - `CatalogSeeder.cs` diperluas: bikin akun `seller-demo@shopy.com` (password `SellerDemo1234!`, dev-only) + toko "Toko Demo Shopy", semua 12 produk seeder di-assign ke situ — tapi karena seeder ini cuma jalan sekali (guard `Categories` kosong) dan sudah pernah jalan di sesi sebelumnya, jalur ini belum benar-benar tereksekusi di DB dev sekarang.
+  - Yang benar-benar jalan: migration `AddSellerFoundation` sendiri punya backfill raw-SQL 2 lapis (idempotent) — (1) 12 produk lama yang sudah ada di-assign ke toko fallback "Toko Migrasi" (dibuatkan akun + toko dummy otomatis), (2) 1 `Order` lama (`SHP-20260807-8349`) dikelompokkan jadi `SubOrder` per toko dari produknya. Sudah diverifikasi lewat psql: 0 produk tersisa dengan `StoreId` kosong, 0 `OrderItems` tanpa `SubOrderId`.
+- [x] Setup EF Core migration & apply ke database dev (`shopy`/`shopy_dev`)
+  - Migration `AddSellerFoundation` — perlu diketahui: DB dev asli project ini ternyata **Postgres native Windows** (`localhost:5432`), BUKAN container `shopy-postgres` di `docker-compose.yml` (yang ada & jalan tapi kosong/tidak dipakai — cek dengan `psql` native, bukan `docker exec`, kalau mau verifikasi data).
+- [x] Konfigurasi baru di `appsettings.json`: `Platform:CommissionPercent` (mis. 2%), `Platform:WithdrawalAdminFee` (mis. Rp2.500), `Platform:MinWithdrawal`, `Platform:AutoCancelHours` (mis. 24 jam), `Platform:AutoCompleteDays` (mis. 3 hari setelah `Shipped`)
+  - Ditambahkan ke `appsettings.json` & `appsettings.Development.json`: `CommissionPercent=2`, `WithdrawalAdminFee=2500`, `MinWithdrawal=50000`, `AutoCancelHours=24`, `AutoCompleteDays=3`. Belum dibaca oleh kode manapun (baru dipakai mulai Fase 4/5).
+- ⚠️ **Regresi app pembeli sudah dicek** — `dotnet build` 0 error, `/api/products`, `/api/categories`, login `test@shopy.com`, dan `/api/orders` semua masih 200 dengan bentuk response sama seperti sebelumnya.
 
 ## Fase 1 — Auth & Role Seller
 
