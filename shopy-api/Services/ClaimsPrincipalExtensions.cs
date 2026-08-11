@@ -13,4 +13,13 @@ public static class ClaimsPrincipalExtensions
         var raw = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
         return Guid.Parse(raw!);
     }
+
+    /// <summary>
+    /// Ambil Id toko dari claim JWT ("store_id") — null kalau user belum punya toko.
+    /// </summary>
+    public static Guid? GetStoreId(this ClaimsPrincipal user)
+    {
+        var raw = user.FindFirstValue("store_id");
+        return raw is null ? null : Guid.Parse(raw);
+    }
 }

@@ -73,6 +73,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Role dasar aplikasi — jalan di semua environment (lihat Data/RoleSeeder.cs).
+using (var roleSeedScope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedAsync(roleSeedScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>());
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

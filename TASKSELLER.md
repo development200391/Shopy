@@ -80,20 +80,35 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 1 — Auth & Role Seller
 
-- [ ] Backend: seed role `Buyer` / `Seller` / `Admin` lewat `RoleManager` saat startup (pola sama seperti `CatalogSeeder`)
-- [ ] Backend: `TokenService.GenerateAccessToken` menyisipkan claim `role` (dari `UserManager.GetRolesAsync`) + claim `store_id` kalau user punya toko aktif — **saat ini claim yang dikirim cuma `sub`, `email`, `jti`, `full_name`**
-- [ ] Backend: helper `ClaimsPrincipalExtensions.GetStoreId()` + attribute `[Authorize(Roles = "Seller")]` di semua controller seller, dan guard "toko harus `Active`"
-- [ ] Backend: `POST /api/seller/store` (buka toko — user yang sudah login mengajukan toko, status awal `Pending`), `GET /api/seller/store/status` (status verifikasi)
-- [ ] Backend: `GET /api/seller/me` — profil user + ringkasan toko (untuk bootstrap app seller)
-- [ ] Backend: login pakai endpoint yang sama (`POST /api/auth/login`), tapi app seller menolak user tanpa role `Seller` dengan pesan jelas ("Akun ini belum punya toko")
-- [ ] Flutter: Splash + cek sesi (reuse pola `splash_screen.dart` dari app pembeli, desain **Pulse Rings**)
-- [ ] Flutter: halaman Login & Register seller — reuse desain **Wave Header** dari app pembeli
-- [ ] Flutter: halaman **Buka Toko** (3 langkah: Data Toko → Alamat → Verifikasi) + halaman status "Menunggu Verifikasi"
+- [x] Backend: seed role `Buyer` / `Seller` / `Admin` lewat `RoleManager` saat startup (pola sama seperti `CatalogSeeder`)
+  - `Data/RoleSeeder.cs` — beda dari `CatalogSeeder`, ini dipanggil **unconditional** di `Program.cs` (semua environment, bukan cuma Development), karena role wajib ada di production juga. Diverifikasi lewat psql: 3 role (`Buyer`/`Seller`/`Admin`) ter-seed di `AspNetRoles`.
+- [x] Backend: `TokenService.GenerateAccessToken` menyisipkan claim `role` (dari `UserManager.GetRolesAsync`) + claim `store_id` kalau user punya toko aktif — **saat ini claim yang dikirim cuma `sub`, `email`, `jti`, `full_name`**
+  - Method jadi `GenerateAccessTokenAsync` (inject `UserManager<ApplicationUser>` + `ShopyDbContext`). Claim `store_id` disisipkan kalau user punya toko **apapun statusnya** (bukan cuma `Active`) — status gating jadi tanggung jawab guard terpisah, bukan syarat claim ada/tidaknya.
+  - ⚠️ Detail teknis penting: claim role ditulis pakai tipe string pendek `"role"` (bukan `ClaimTypes.Role`) — inbound claim type mapping bawaan JWT bearer ASP.NET otomatis convert ini ke `ClaimTypes.Role` saat validasi token, supaya `[Authorize(Roles=...)]`/`User.IsInRole()` beneran jalan. Sudah diverifikasi manual: decode token hasil `POST /api/seller/store` menunjukkan `"role":"Seller"` dan `"store_id":"<guid>"`.
+- [x] Backend: helper `ClaimsPrincipalExtensions.GetStoreId()` + attribute `[Authorize(Roles = "Seller")]` di semua controller seller, dan guard "toko harus `Active`"
+  - `GetStoreId()` sudah ada (pola sama seperti `GetUserId()`). ⚠️ Guard "toko harus Active" **belum dibuat jadi reusable attribute/filter** — 3 endpoint Fase 1 semuanya `[Authorize]` biasa (bukan `Roles=Seller`), karena dipanggil pas toko belum/baru dibuat. Guard aktif baru ditambah pas Fase 2/3 punya endpoint yang beneran butuh (mis. manajemen produk).
+- [x] Backend: `POST /api/seller/store` (buka toko — user yang sudah login mengajukan toko, status awal `Pending`), `GET /api/seller/store/status` (status verifikasi)
+  - `Controllers/SellerController.cs`. `POST /api/seller/store` sekalian bikin 1 `StoreAddress` default (alamat pickup) + 1 `StoreBalance` kosong dalam transaksi yang sama — CRUD alamat toko terpisah baru Fase 2, jadi digabung ke sini dulu. Response-nya `AuthResponse` baru (token ter-refresh dengan claim `role`/`store_id` terbaru) supaya Flutter tidak perlu logout/login ulang setelah buka toko. Diverifikasi lewat `curl`: buka toko sukses (200), buka toko kedua kalinya ditolak (409 Conflict).
+- [x] Backend: `GET /api/seller/me` — profil user + ringkasan toko (untuk bootstrap app seller)
+  - Balas `store: null` kalau belum ada toko — dipakai Splash/routing Flutter buat memutuskan halaman berikutnya.
+- [x] Backend: login pakai endpoint yang sama (`POST /api/auth/login`), tapi app seller menolak user tanpa role `Seller` dengan pesan jelas ("Akun ini belum punya toko")
+  - ⚠️ **Diinterpretasi ulang** — dibaca literal ini kontradiktif dengan alur onboarding (user baru justru belum punya role Seller saat pertama kali buka app). Bukan hard-reject di login: setelah auth sukses, app selalu panggil `GET /api/seller/me` lalu routing — belum punya toko → wizard Buka Toko; `Pending` → Menunggu Verifikasi; `Active` → dashboard; `Suspended`/`Closed` → baru di situ tampil pesan blokir jelas.
+- [x] Flutter: Splash + cek sesi (reuse pola `splash_screen.dart` dari app pembeli, desain **Pulse Rings**)
+  - `screens/splash/splash_screen.dart` — sama persis pola Pulse Rings, bedanya routing setelah bootstrap manggil `navigateAfterAuth()` (lihat catatan `storeProvider` di bawah), bukan langsung ke Home.
+- [x] Flutter: halaman Login & Register seller — reuse desain **Wave Header** dari app pembeli
+  - `screens/auth/{login_screen,register_screen}.dart` — field & validasi sama persis app pembeli, tagline diganti "Kelola tokomu, kapan saja". Tombol Google/Facebook tetap placeholder "belum dikonfigurasi" (bukan scope Fase 1).
+- [x] Flutter: halaman **Buka Toko** (3 langkah: Data Toko → Alamat → Verifikasi) + halaman status "Menunggu Verifikasi"
 
   ![Mockup Buka Toko - Bold & Colorful](./shopy-seller/design/assets/daftar-toko-seller-bold-colorful.png)
 
-- [ ] Flutter: `authProvider` + `storeProvider` (Riverpod), token disimpan di `flutter_secure_storage`
+  - `screens/store/open_store_screen.dart` — wizard 3 langkah dalam 1 `PageView` + step indicator custom (lingkaran nomor + garis, meniru mockup). Langkah 1 "Data Toko" sesuai mockup **kecuali field "Kategori Toko"** ⚠️ (dilewati — tidak ada field kategori di skema `Store` Fase 0, konsisten dengan pola project ini yang banyak melewati elemen mockup yang backend-nya belum ada). Tombol "Unggah Logo Toko" & catatan di langkah 3 "Verifikasi" sengaja belum fungsional ⚠️ (infrastruktur upload file baru Fase 2) — cuma snackbar/catatan info, sama pola seperti tombol social login di app pembeli. Langkah 2 "Alamat" & 3 "Verifikasi" didesain sendiri (tidak ada mockup terpisah), pakai token desain yang sama.
+  - `screens/store/awaiting_verification_screen.dart` — dipakai untuk status `Pending` maupun varian blokir `Suspended`/`Closed` (pesan beda per status, bukan file terpisah).
+  - `screens/dashboard/dashboard_placeholder_screen.dart` — placeholder untuk toko `Active`, pola sama persis seperti Home placeholder `shopy-mobile` Fase 1 (dashboard asli baru Fase 8).
+- [x] Flutter: `authProvider` + `storeProvider` (Riverpod), token disimpan di `flutter_secure_storage`
+  - `providers/auth_provider.dart` disalin dari app pembeli + method baru `refreshSessionFrom()` (dipakai setelah buka toko sukses). Bukan `storeProvider` melainkan `providers/seller_provider.dart` → `sellerMeProvider` (`FutureProvider`, sumber kebenaran status toko selalu dari `GET /api/seller/me`, bukan dari claim JWT lokal yang bisa basi). Routing terpusat di `routing/post_auth_router.dart` (`navigateAfterAuth`), dipanggil dari Splash, Login, Register, dan setelah submit Buka Toko — supaya logic-nya tidak terduplikasi 4 tempat.
+  - Wizard form Buka Toko sengaja **tidak** pakai `NotifierProvider` terpisah — state field disimpan di `TextEditingController` lokal widget, konsisten dengan pola form lain di app pembeli (`login_screen.dart`, dst).
 - ⚠️ Catatan yang diwariskan dari TASKS.md Fase 1: login Google/Facebook masih butuh kredensial OAuth asli, dan pengiriman email OTP masih pakai placeholder Gmail SMTP. Sisi seller ikut kena batasan yang sama.
+- ⚠️ **Belum dites visual di browser/device asli** — `flutter analyze` bersih & `flutter test` lulus (termasuk test routing Splash→Login, pakai fake `AuthNotifier` supaya tidak menyentuh `flutter_secure_storage` asli di lingkungan test — pola sama seperti `shopy-mobile/test/home_screen_test.dart`), dan alur backend penuh (register → buka toko → cek klaim token → store/status → tolak toko kedua) sudah diverifikasi lewat `curl`. Tapi percobaan screenshot otomatis di lingkungan ini sebelumnya gagal (WebGL, lihat TASKS.md Fase 2), jadi verifikasi visual wizard Buka Toko di Chrome/device asli belum dilakukan — coba jalankan manual (`flutter run -d chrome`, folder `shopy-seller`) sebelum dianggap benar-benar kelar.
 
 ## Fase 2 — Profil & Pengaturan Toko
 

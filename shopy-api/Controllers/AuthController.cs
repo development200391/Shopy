@@ -286,7 +286,7 @@ public class AuthController(
 
     private async Task<AuthResponse> IssueAuthResponseAsync(ApplicationUser user)
     {
-        var accessToken = tokenService.GenerateAccessToken(user);
+        var accessToken = await tokenService.GenerateAccessTokenAsync(user);
         var refreshToken = new RefreshToken
         {
             Id = Guid.NewGuid(),

@@ -6,7 +6,7 @@ public record AccessTokenResult(string Token, DateTime ExpiresAt);
 
 public interface ITokenService
 {
-    AccessTokenResult GenerateAccessToken(ApplicationUser user);
+    Task<AccessTokenResult> GenerateAccessTokenAsync(ApplicationUser user);
     string GenerateRefreshToken();
     DateTime GetRefreshTokenExpiry();
 }

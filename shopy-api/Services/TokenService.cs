@@ -1,16 +1,22 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using shopy_api.Data;
 using shopy_api.Models;
 
 namespace shopy_api.Services;
 
-public class TokenService(IConfiguration configuration) : ITokenService
+public class TokenService(
+    IConfiguration configuration,
+    UserManager<ApplicationUser> userManager,
+    ShopyDbContext dbContext) : ITokenService
 {
     private readonly IConfiguration _configuration = configuration;
 
-    public AccessTokenResult GenerateAccessToken(ApplicationUser user)
+    public async Task<AccessTokenResult> GenerateAccessTokenAsync(ApplicationUser user)
     {
         var jwtSection = _configuration.GetSection("Jwt");
         var key = jwtSection["Key"]
@@ -26,6 +32,21 @@ public class TokenService(IConfiguration configuration) : ITokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new("full_name", user.FullName),
         };
+
+        // Claim type "role" (bukan ClaimTypes.Role) — inbound claim type mapping bawaan JWT
+        // bearer otomatis convert ini ke ClaimTypes.Role saat validasi, supaya
+        // [Authorize(Roles = "...")] & User.IsInRole() bekerja (lihat TASKSELLER.md Fase 1).
+        var roles = await userManager.GetRolesAsync(user);
+        claims.AddRange(roles.Select(role => new Claim("role", role)));
+
+        var storeId = await dbContext.Stores
+            .Where(s => s.OwnerUserId == user.Id)
+            .Select(s => (Guid?)s.Id)
+            .FirstOrDefaultAsync();
+        if (storeId is not null)
+        {
+            claims.Add(new Claim("store_id", storeId.Value.ToString()));
+        }
 
         var signingKey = new SymmetricSecurityKey(Convert.FromBase64String(key));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
