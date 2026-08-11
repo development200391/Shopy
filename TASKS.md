@@ -191,6 +191,11 @@ Breakdown detail tahap pengerjaan aplikasi Shopy, dari setup awal sampai rilis. 
   - ⚠️ **Belum dites dengan push asli** — sama seperti Midtrans, perlu Firebase project & service account key kamu isi dulu (lihat catatan "Setup push notification" di atas) sebelum bisa diverifikasi live end-to-end.
 
 ## Fase 7 — Polish & Testing
+Untuk Test
+test@shopy.com
+Test1234!
+
+
 
 - [ ] Review & rapikan UI/UX di semua halaman
 - [ ] Unit test (backend & Flutter)

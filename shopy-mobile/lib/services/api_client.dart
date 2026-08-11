@@ -19,7 +19,9 @@ const _authEndpointsExcludedFromRefresh = [
 String resolveApiBaseUrl() {
   const port = 5083;
   if (kIsWeb) return 'http://localhost:$port';
-  if (Platform.isAndroid) return 'http://10.0.2.2:$port';
+  // HP fisik lewat USB pakai `adb reverse tcp:5083 tcp:5083`, jadi `localhost`
+  // di HP di-forward ke API di laptop. Untuk emulator Android, ganti ke 10.0.2.2.
+  if (Platform.isAndroid) return 'http://localhost:$port';
   return 'http://localhost:$port';
 }
 
