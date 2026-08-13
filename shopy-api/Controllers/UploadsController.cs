@@ -15,6 +15,7 @@ public class UploadsController(IFileStorage fileStorage) : ControllerBase
     {
         ["logo"] = ["image/jpeg", "image/png", "image/webp"],
         ["banner"] = ["image/jpeg", "image/png", "image/webp"],
+        ["product"] = ["image/jpeg", "image/png", "image/webp"],
         ["document"] = ["image/jpeg", "image/png", "application/pdf"],
     };
 

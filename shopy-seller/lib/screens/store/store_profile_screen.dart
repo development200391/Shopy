@@ -11,6 +11,7 @@ import '../../services/seller_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
+import '../product/product_list_screen.dart';
 import 'bank_accounts_screen.dart';
 import 'edit_store_profile_screen.dart';
 import 'store_addresses_screen.dart';
@@ -103,6 +104,13 @@ class _StoreProfileBody extends ConsumerWidget {
                   _OpenToggleCard(
                     isOpen: store.isOpen,
                     onChanged: (value) => _toggleOpen(context, ref, value),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _ProductsCard(
+                    productCount: store.productCount,
+                    onTap: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute(builder: (_) => const ProductListScreen())),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _MenuCard(
@@ -290,6 +298,54 @@ class _OpenToggleCard extends StatelessWidget {
           ),
           Switch(value: isOpen, activeThumbColor: AppColors.primary, onChanged: onChanged),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductsCard extends StatelessWidget {
+  final int productCount;
+  final VoidCallback onTap;
+
+  const _ProductsCard({required this.productCount, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Produk Saya', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('$productCount produk terdaftar', style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ),
       ),
     );
   }

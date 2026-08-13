@@ -141,23 +141,34 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 3 — Manajemen Produk
 
-- [ ] Backend: `GET /api/seller/products` (paged, filter `status`=aktif/nonaktif/habis, search, sort) — hanya produk milik toko yang login
-- [ ] Backend: `POST /api/seller/products` (nama, kategori, harga, stok, berat, kondisi, deskripsi, gambar[], status tayang) + slug auto-generate & dijamin unik
-- [ ] Backend: `PUT /api/seller/products/{id}`, `DELETE /api/seller/products/{id}` (soft delete), `PATCH /api/seller/products/{id}/active` (toggle tayang)
-- [ ] Backend: `PATCH /api/seller/products/bulk` — update stok & harga banyak produk sekaligus
-- [ ] Backend: `GET /api/seller/products/low-stock` (ambang batas bisa diatur, dipakai dashboard & notifikasi)
+- [x] Backend: `GET /api/seller/products` (paged, filter `status`=aktif/nonaktif/habis, search, sort) — hanya produk milik toko yang login
+  - `Controllers/SellerProductsController.cs` — `status=all|active|inactive|outofstock` (`active`=`IsActive && Stock>0`, `outofstock`=`IsActive && Stock==0`), `q` search nama, `sort=newest|priceAsc|priceDesc|stockAsc`. Tambah juga `GET /{id}` (tidak eksplisit di checklist tapi jelas prasyarat buat prefill halaman Edit Produk).
+- [x] Backend: `POST /api/seller/products` (nama, kategori, harga, stok, berat, kondisi, deskripsi, gambar[], status tayang) + slug auto-generate & dijamin unik
+  - Slug generator baru (belum ada helper serupa di backend manapun) — slugify nama + cek tabrakan, tambah suffix `-2`/`-3` dst. ⚠️ **Slug immutable setelah dibuat** (tidak ikut berubah walau nama diedit lewat `PUT`), supaya link yang sudah beredar di app pembeli tidak rusak.
+  - Sekalian mulai menjaga `Store.ProductCount` (field denormalized dari Fase 0 yang dari Fase 2 selalu nampil 0 di Profil Toko) — `++` saat create, `--` saat delete. Bukan item eksplisit di checklist, tapi memperbaiki stat yang sebelumnya statis.
+- [x] Backend: `PUT /api/seller/products/{id}`, `DELETE /api/seller/products/{id}` (soft delete), `PATCH /api/seller/products/{id}/active` (toggle tayang)
+  - Ganti foto di `PUT` = **replace-all** (hapus semua `ProductImage` lama, insert ulang dari `imageUrls` yang dikirim client, index 0 = `IsPrimary`) — lebih simpel dari sinkronisasi per-foto, cukup untuk skala "maks 5 foto".
+- [x] Backend: `PATCH /api/seller/products/bulk` — update stok & harga banyak produk sekaligus
+- [x] Backend: `GET /api/seller/products/low-stock` (ambang batas bisa diatur, dipakai dashboard & notifikasi)
+  - `?threshold=` (default 10). ⚠️ Endpoint ini dibuat sesuai checklist (buat Fase 8 nanti), tapi halaman Atur Stok & Harga di bawah **tidak memanggilnya** — banner stok menipis di situ dihitung client-side dari list yang sudah di-fetch untuk halaman itu sendiri, supaya tidak dobel request data yang sama.
+  - Kategori upload baru `"product"` ditambahkan ke `UploadsController` (Fase 2) — reuse endpoint generik yang sama.
 - [x] Backend: tambahkan `storeId`/`storeName` ke DTO produk publik (`Models/Catalog/CatalogDtos.cs`) supaya app pembeli bisa menampilkan asal toko — **sudah dikerjakan di Fase 2** (jadi prasyarat endpoint publik `GET /api/stores/{slug}/products` & kartu toko di Detail Produk), ikut ditambah `storeSlug` juga (tidak diminta eksplisit di baris ini, tapi diperlukan buat link "Kunjungi Toko")
-- [ ] Flutter: halaman **Daftar Produk** (tab Semua/Aktif/Nonaktif/Habis, toggle tayang, badge stok menipis, aksi ubah/hapus, FAB tambah produk)
+- [x] Flutter: halaman **Daftar Produk** (tab Semua/Aktif/Nonaktif/Habis, toggle tayang, badge stok menipis, aksi ubah/hapus, FAB tambah produk)
 
   ![Mockup Daftar Produk - Bold & Colorful](./shopy-seller/design/assets/produk-list-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman **Tambah/Edit Produk** (multi-foto + foto utama, kategori, harga, stok stepper, berat, deskripsi, kondisi, toggle tayang, simpan draf)
+  - `screens/product/product_list_screen.dart` — filter pakai `ChoiceChip` (bukan `TabBar`, biar cocok gaya pill mockup), dihitung client-side dari 1 list `status=all` (bukan 4 request terpisah per tab). ⚠️ **Belum ada bottom nav 5-tab** (Beranda/Produk/Pesanan/Chat/Toko) yang tampil di mockup halaman ini maupun mockup Profil Toko (Fase 2) — itu eksplisit scope Fase 8 ("bottom nav 5 tab"). Untuk sekarang, akses ke halaman ini lewat kartu baru **"Produk Saya"** di `StoreProfileScreen` (di atas menu list, isi `${store.productCount} produk terdaftar`) — nav shell asli menyusul Fase 8.
+- [x] Flutter: halaman **Tambah/Edit Produk** (multi-foto + foto utama, kategori, harga, stok stepper, berat, deskripsi, kondisi, toggle tayang, simpan draf)
 
   ![Mockup Form Produk - Bold & Colorful](./shopy-seller/design/assets/produk-form-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman **Atur Stok & Harga** (edit cepat massal + banner peringatan stok menipis)
+  - `screens/product/product_form_screen.dart` — 1 screen dipakai create & edit (`productId` nullable). Foto diupload langsung saat dipilih (bukan ditunda sampai submit) lewat `image_picker` `pickMultiImage`. "Simpan Draf" = `isActive:false`, "Simpan & Tayangkan" = `isActive:true` — reuse field `IsActive` yang sudah ada, tidak perlu status "draft" baru di skema. ⚠️ **Kategori dipilih dari daftar flat** ("Root" kalau tanpa anak, "Root > Anak" kalau ada) hasil gabungan `GET /api/categories` + `GET /api/categories/{slug}` per root — bukan picker 2-langkah drill-down seperti tersirat mockup ("Fashion Pria > Atasan"), karena data kategori seeder cuma 2 level (tidak ada level "Atasan").
+- [x] Flutter: halaman **Atur Stok & Harga** (edit cepat massal + banner peringatan stok menipis)
 
   ![Mockup Atur Stok & Harga - Bold & Colorful](./shopy-seller/design/assets/stok-harga-seller-bold-colorful.png)
+
+  - `screens/product/stock_price_screen.dart` — `TextEditingController` per baris, track produk yang "dirty" buat badge counter di tombol "Simpan Perubahan (N)", submit sekali lewat `PATCH /bulk`.
+- ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error. Alur penuh diuji lewat `curl` — buat toko → upload foto produk → buat produk (cek `Store.ProductCount` naik) → filter list per status → toggle aktif/nonaktif → bulk update harga+stok → low-stock → hapus (cek `Store.ProductCount` turun lagi & hilang dari endpoint publik). `GET /api/products` (endpoint lama) tetap 200 dengan produk toko lain tidak terganggu. `flutter analyze` + `flutter test` bersih di `shopy-seller`. Verifikasi visual manual belum dilakukan (sama seperti Fase 1-2).
 
 - [ ] Flutter: `productProvider` + `productFormProvider` (Riverpod) + `services/seller_product_api_service.dart`
 
