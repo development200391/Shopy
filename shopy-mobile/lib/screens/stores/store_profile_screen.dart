@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/catalog/product_summary.dart';
 import '../../models/store/store_public_profile.dart';
+import '../../providers/chat_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_client.dart';
+import '../../services/chat_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/products/product_card.dart';
+import '../chat/chat_room_screen.dart';
 import '../products/product_detail_screen.dart';
 
 /// Halaman publik Profil Toko — dibuka dari tombol "Kunjungi Toko" di Detail
@@ -131,6 +134,15 @@ class _StoreProfileBody extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Text(store.description!, style: const TextStyle(color: AppColors.textSecondary)),
                 ],
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openChat(context, ref, store.id),
+                    icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                    label: const Text('Chat'),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const Divider(),
                 const SizedBox(height: AppSpacing.sm),
@@ -177,6 +189,19 @@ class _StoreProfileBody extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+Future<void> _openChat(BuildContext context, WidgetRef ref, String storeId) async {
+  try {
+    final room = await ref.read(chatApiServiceProvider).openRoom(storeId);
+    if (!context.mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)));
+  } on ChatException catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
   }
 }
 

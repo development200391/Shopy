@@ -41,6 +41,9 @@ public record SubOrderDetailDto(
     string? Note,
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<SubOrderStatusHistoryDto> StatusHistory,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    // Produk di pesanan ini yang sudah pernah diberi ulasan pembeli (ProductId) — dipakai
+    // Flutter buat tombol "Beri Ulasan" vs "Sudah Dinilai" tanpa panggilan terpisah.
+    IReadOnlyList<Guid> ReviewedProductIds);
 
 public record UpdateSubOrderStatusRequest(SubOrderStatus Status);

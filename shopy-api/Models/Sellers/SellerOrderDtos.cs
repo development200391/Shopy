@@ -2,7 +2,7 @@ using shopy_api.Models.Orders;
 
 namespace shopy_api.Models.Sellers;
 
-public record BuyerInfoDto(string FullName, int JoinedYear, int OrderCountAtThisStore);
+public record BuyerInfoDto(Guid UserId, string FullName, int JoinedYear, int OrderCountAtThisStore);
 
 public record SellerSubOrderListItemDto(
     Guid Id,

@@ -61,7 +61,8 @@ public class SubOrdersController(
             return NotFound(new { message = "Pesanan tidak ditemukan." });
         }
 
-        return Ok(ToDetailDto(subOrder));
+        var reviewedProductIds = await GetReviewedProductIdsAsync(userId, subOrder.OrderItems.Select(oi => oi.ProductId));
+        return Ok(ToDetailDto(subOrder, reviewedProductIds));
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -121,7 +122,21 @@ public class SubOrdersController(
 
         await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
 
-        return Ok(ToDetailDto(subOrder));
+        var reviewedProductIds = await GetReviewedProductIdsAsync(userId, subOrder.OrderItems.Select(oi => oi.ProductId));
+        return Ok(ToDetailDto(subOrder, reviewedProductIds));
+    }
+
+    private async Task<List<Guid>> GetReviewedProductIdsAsync(Guid userId, IEnumerable<Guid> productIds)
+    {
+        var ids = productIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+        return await dbContext.Reviews
+            .Where(r => r.UserId == userId && ids.Contains(r.ProductId))
+            .Select(r => r.ProductId)
+            .ToListAsync();
     }
 
     public static SubOrderSummaryDto ToSummaryDto(SubOrder so) => new(
@@ -130,7 +145,7 @@ public class SubOrdersController(
         so.Subtotal + so.ShippingCost - so.VoucherDiscount, so.OrderItems.Count,
         so.OrderItems.Take(3).Select(oi => oi.Product.ImageUrl).ToList(), so.CreatedAt);
 
-    public static SubOrderDetailDto ToDetailDto(SubOrder so) => new(
+    public static SubOrderDetailDto ToDetailDto(SubOrder so, IReadOnlyList<Guid> reviewedProductIds) => new(
         so.Id, so.SubOrderNumber, so.OrderId, so.Order.OrderNumber, so.StoreId, so.Store.Name, so.Store.LogoUrl,
         so.Status.ToString(), so.Subtotal, so.ShippingCost, so.VoucherDiscount, so.Subtotal + so.ShippingCost - so.VoucherDiscount,
         so.CourierCode, so.CourierService, so.TrackingNumber,
@@ -139,5 +154,5 @@ public class SubOrdersController(
         so.Order.Note,
         so.OrderItems.Select(oi => new OrderItemDto(oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal)).ToList(),
         so.StatusHistories.OrderBy(h => h.ChangedAt).Select(h => new SubOrderStatusHistoryDto(h.Status.ToString(), h.Note, h.ChangedAt)).ToList(),
-        so.CreatedAt);
+        so.CreatedAt, reviewedProductIds);
 }

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/catalog/product_detail.dart';
+import '../../models/review/review.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/catalog_provider.dart';
+import '../../providers/review_provider.dart';
+import '../../services/api_client.dart';
+import '../../services/review_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
@@ -144,11 +148,8 @@ class _ProductDetailBody extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      const Text(
-                        'Daftar ulasan lengkap belum tersedia — endpoint ulasan produk belum dikerjakan.',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ReviewSection(productId: product.id),
                       const SizedBox(height: AppSpacing.xl),
                     ],
                   ),
@@ -355,6 +356,196 @@ class _BottomBar extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ReviewSection extends ConsumerStatefulWidget {
+  final String productId;
+
+  const _ReviewSection({required this.productId});
+
+  @override
+  ConsumerState<_ReviewSection> createState() => _ReviewSectionState();
+}
+
+class _ReviewSectionState extends ConsumerState<_ReviewSection> {
+  List<Review> _reviews = [];
+  int _page = 0;
+  bool _hasMore = false;
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+    try {
+      final result = await ref.read(reviewApiServiceProvider).getProductReviews(widget.productId, page: 1);
+      if (!mounted) return;
+      setState(() {
+        _reviews = result.items;
+        _page = result.page;
+        _hasMore = result.hasMore;
+        _loading = false;
+      });
+    } on ReviewException {
+      if (mounted) {
+        setState(() {
+          _error = true;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loading = true);
+    try {
+      final result = await ref.read(reviewApiServiceProvider).getProductReviews(widget.productId, page: _page + 1);
+      if (!mounted) return;
+      setState(() {
+        _reviews = [..._reviews, ...result.items];
+        _page = result.page;
+        _hasMore = result.hasMore;
+        _loading = false;
+      });
+    } on ReviewException {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading && _reviews.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error && _reviews.isEmpty) {
+      return const Text('Gagal memuat ulasan.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12));
+    }
+    if (_reviews.isEmpty) {
+      return const Text('Belum ada ulasan untuk produk ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final review in _reviews) _ReviewCard(review: review),
+        if (_hasMore)
+          Center(
+            child: _loading
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    child: CircularProgressIndicator(),
+                  )
+                : TextButton(onPressed: _loadMore, child: const Text('Muat Lebih Banyak')),
+          ),
+      ],
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final Review review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                backgroundImage: review.buyerAvatarUrl == null
+                    ? null
+                    : NetworkImage('${resolveApiBaseUrl()}${review.buyerAvatarUrl}'),
+                child: review.buyerAvatarUrl == null
+                    ? const Icon(Icons.person_outline, color: AppColors.primary, size: 16)
+                    : null,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(review.buyerName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              ),
+              Row(
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    Icons.star,
+                    size: 14,
+                    color: i < review.rating ? Colors.amber : AppColors.divider,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (review.comment != null && review.comment!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(review.comment!, style: const TextStyle(fontSize: 13)),
+          ],
+          if (review.imageUrls.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            SizedBox(
+              height: 56,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: review.imageUrls.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 6),
+                itemBuilder: (context, index) => ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    '${resolveApiBaseUrl()}${review.imageUrls[index]}',
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (review.sellerReply != null && review.sellerReply!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Balasan Penjual', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                  const SizedBox(height: 2),
+                  Text(review.sellerReply!, style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

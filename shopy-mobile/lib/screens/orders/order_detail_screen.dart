@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../models/order/order_line_item.dart';
 import '../../models/order/sub_order_detail.dart';
 import '../../models/order/sub_order_status.dart';
+import '../../providers/chat_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/review_provider.dart';
+import '../../services/chat_exception.dart';
 import '../../services/order_exception.dart';
+import '../../services/review_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/shared/placeholder_thumbnail.dart';
+import '../chat/chat_room_screen.dart';
 
 /// Halaman Detail Pesanan + tracking status — 1 toko (`SubOrder`) per
 /// halaman sejak TASKSELLER.md Fase 4. Desain terpilih: **Bold & Colorful**
@@ -103,6 +110,33 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
     if (confirmed == true) await _updateStatus(SubOrderStatus.completed);
   }
 
+  Future<void> _openChat() async {
+    setState(() => _busy = true);
+    try {
+      final room = await ref.read(chatApiServiceProvider).openRoom(widget.order.storeId);
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)));
+    } on ChatException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openReviewSheet(OrderLineItem item) async {
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _ReviewSheet(subOrderId: widget.order.id, item: item),
+    );
+    if (submitted == true) {
+      ref.invalidate(subOrderDetailProvider(widget.order.id));
+    }
+  }
+
   void _showTrackingInfo(BuildContext context) {
     final order = widget.order;
     if (order.trackingNumber == null) {
@@ -170,23 +204,47 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.divider),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(width: 56, height: 56, child: PlaceholderThumbnail()),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item.quantity}x ${formatRupiah(item.unitPrice)}',
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                Row(
+                  children: [
+                    const SizedBox(width: 56, height: 56, child: PlaceholderThumbnail()),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.quantity}x ${formatRupiah(item.unitPrice)}',
+                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+                if (order.status == SubOrderStatus.completed) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  if (order.reviewedProductIds.contains(item.productId))
+                    const Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                        SizedBox(width: 4),
+                        Text('Sudah Dinilai', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 12)),
+                      ],
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => _openReviewSheet(item),
+                        child: const Text('Beri Ulasan'),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),
@@ -232,9 +290,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fitur hubungi penjual belum tersedia.')),
-                ),
+                onPressed: _busy ? null : _openChat,
                 child: const Text('Hubungi Penjual'),
               ),
             ),
@@ -470,6 +526,141 @@ class _SummaryRow extends StatelessWidget {
           Text(
             value,
             style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.w600, fontSize: bold ? 16 : 14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewSheet extends ConsumerStatefulWidget {
+  final String subOrderId;
+  final OrderLineItem item;
+
+  const _ReviewSheet({required this.subOrderId, required this.item});
+
+  @override
+  ConsumerState<_ReviewSheet> createState() => _ReviewSheetState();
+}
+
+class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
+  final _commentController = TextEditingController();
+  int _rating = 5;
+  String? _photoPath;
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPhoto() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null) return;
+    setState(() => _photoPath = picked.path);
+  }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    try {
+      String? imageUrl;
+      if (_photoPath != null) {
+        imageUrl = await ref.read(uploadsApiServiceProvider).uploadFile(_photoPath!, 'review');
+      }
+      await ref.read(reviewApiServiceProvider).createReview(
+            widget.subOrderId,
+            productId: widget.item.productId,
+            rating: _rating,
+            comment: _commentController.text.trim(),
+            imageUrls: imageUrl == null ? null : [imageUrl],
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on ReviewException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+      setState(() => _submitting = false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.error));
+      setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        top: AppSpacing.md,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Beri Ulasan', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 4),
+          Text(widget.item.productName, style: const TextStyle(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              5,
+              (i) => IconButton(
+                onPressed: () => setState(() => _rating = i + 1),
+                icon: Icon(Icons.star, color: i < _rating ? Colors.amber : AppColors.divider, size: 32),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _commentController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Ceritakan pengalamanmu dengan produk ini (opsional)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (_photoPath != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  const Icon(Icons.image_outlined, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  const Expanded(child: Text('1 foto dipilih', style: TextStyle(fontSize: 12))),
+                  TextButton(onPressed: () => setState(() => _photoPath = null), child: const Text('Hapus')),
+                ],
+              ),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: _pickPhoto,
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: const Text('Tambah Foto (opsional)'),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitting ? null : _submit,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Kirim Ulasan'),
+            ),
           ),
         ],
       ),

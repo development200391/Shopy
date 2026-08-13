@@ -73,11 +73,13 @@ class SellerOrderStatusHistoryEntry {
 }
 
 class SellerOrderBuyer {
+  final String userId;
   final String fullName;
   final int joinedYear;
   final int orderCountAtThisStore;
 
   const SellerOrderBuyer({
+    required this.userId,
     required this.fullName,
     required this.joinedYear,
     required this.orderCountAtThisStore,
@@ -85,6 +87,7 @@ class SellerOrderBuyer {
 
   factory SellerOrderBuyer.fromJson(Map<String, dynamic> json) {
     return SellerOrderBuyer(
+      userId: json['userId'] as String,
       fullName: json['fullName'] as String,
       joinedYear: json['joinedYear'] as int,
       orderCountAtThisStore: json['orderCountAtThisStore'] as int,

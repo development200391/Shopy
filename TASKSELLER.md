@@ -212,7 +212,7 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
   ![Mockup Detail Pesanan - Bold & Colorful](./shopy-seller/design/assets/pesanan-detail-seller-bold-colorful.png)
 
-  - `shopy-seller/lib/screens/order/order_detail_screen.dart` — banner dinamis per status, tombol Chat masih placeholder ("belum tersedia", chat itu Fase 7), tombol aksi bawah dinamis (Tolak/Proses untuk Baru, Input Resi untuk Diproses).
+  - `shopy-seller/lib/screens/order/order_detail_screen.dart` — banner dinamis per status, tombol Chat (disambungkan di Fase 7), tombol aksi bawah dinamis (Tolak/Proses untuk Baru, Input Resi untuk Diproses).
 - [x] Flutter: halaman **Kirim Pesanan** (pilih kurir, input/scan nomor resi, foto bukti serah terima, konfirmasi)
 
   ![Mockup Kirim Pesanan - Bold & Colorful](./shopy-seller/design/assets/kirim-pesanan-seller-bold-colorful.png)
@@ -290,23 +290,20 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
   - `models/catalog/product_summary.dart`/`product_detail.dart`/`models/cart/cart_item.dart` ditambah `originalPrice` nullable + getter `isDiscounted` — kartu produk (Home/Search), Detail Produk, dan `CartItemCard` menampilkan harga asli dicoret di atas harga efektif kalau sedang diskon.
 - ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error/warning. Alur penuh diuji lewat `curl`: seller set diskon produk (100rb→80rb) → `GET /api/products` publik & keranjang tampilkan harga diskon+`originalPrice` benar → seller buat voucher `FixedAmount` (min. belanja, kuota 2) → `POST /api/vouchers/validate` (subtotal kurang dari minimal → invalid; cukup → valid+jumlah benar) → checkout dengan voucher → `SubOrder.VoucherDiscount`/`SellerEarning`/`Order.TotalAmount` benar (komisi tetap dihitung dari subtotal asli), `Voucher.UsedCount` naik, `VoucherUsage` tercatat → settle→accept→ship→buyer `Completed` → `GET /api/seller/finance/balance` & mutasi saldo (Fase 5) mencerminkan `SellerEarning` net-diskon dengan benar → checkout ke-2 pakai kode sama (kuota jadi 2/2) → checkout ke-3 dengan kode sama ditolak `400` ("Kuota voucher sudah habis") → `GET /api/seller/vouchers/{id}` tampilkan statistik terhitung benar. Regresi: `GET /api/products` normal untuk produk tanpa diskon. `flutter analyze` + `flutter test` bersih di **kedua** app. Verifikasi visual manual belum dilakukan (sama seperti fase-fase sebelumnya).
 
-## Fase 7 — Chat & Ulasan
+## Fase 7 — Chat & Ulasan ✅
 
-- [ ] Backend: `GET /api/seller/chats` (daftar room + unread), `GET /api/seller/chats/{roomId}/messages?before=`, `POST /api/seller/chats/{roomId}/messages`, `POST /api/seller/chats/{roomId}/read`
-- [ ] Backend: sisi pembeli `POST /api/chats` (buka/ambil room dengan toko tertentu) + endpoint kembar untuk kirim/baca pesan
-- [ ] Backend: lampiran pesan berupa produk atau pesanan (`ProductId`/`SubOrderId` di `ChatMessages`)
-- [ ] Backend: realtime dengan **SignalR** (`/hubs/chat`) — kalau terlalu berat, fallback ke polling 5 detik + push FCM untuk pesan baru ⚠️ belum ada infrastruktur realtime sama sekali di project ini
-- [ ] Backend: **ReviewsController** (belum ada sama sekali) — `GET /api/products/{id}/reviews` (publik), `POST /api/orders/{subOrderId}/reviews` (pembeli, hanya untuk pesanan `Completed` miliknya), hitung ulang `Product.RatingAverage`/`RatingCount` & `Store.RatingAverage`
-- [ ] Backend: `GET /api/seller/reviews?filter=belum-dibalas|rating` + `POST /api/seller/reviews/{id}/reply` (balasan penjual)
-- [ ] Flutter: halaman **Daftar Chat** + **Ruang Chat** (konteks produk, gelembung pesan, status terkirim/dibaca, balasan cepat, lampiran gambar/produk)
-
-  ![Mockup Chat - Bold & Colorful](./shopy-seller/design/assets/chat-seller-bold-colorful.png)
-
-- [ ] Flutter: halaman **Ulasan Produk** (ringkasan rating + distribusi bintang, filter belum dibalas, kartu ulasan, form balasan)
-
-  ![Mockup Ulasan - Bold & Colorful](./shopy-seller/design/assets/ulasan-seller-bold-colorful.png)
-
-- ⚠️ Perubahan di app pembeli: tombol **"Hubungi Penjual"** di `order_detail_screen.dart` masih placeholder — sambungkan ke chat. Halaman Detail Produk perlu daftar ulasan per orang (sekarang cuma agregat `RatingAverage`/`RatingCount`, seperti dicatat di TASKS.md Fase 2), dan perlu alur "Beri Ulasan" setelah pesanan selesai.
+- [x] Backend: `GET /api/seller/chats` (daftar room + unread), `GET /api/seller/chats/{roomId}/messages?before=`, `POST /api/seller/chats/{roomId}/messages`, `POST /api/seller/chats/{roomId}/read` — `SellerChatsController`, semua scoped by `GetMyStoreIdAsync()`.
+- [x] Backend: sisi pembeli `POST /api/chats` (buka/ambil room dengan toko tertentu, find-or-create via unique index `(StoreId,BuyerUserId)`) + `GET/POST {roomId}/messages`, `POST {roomId}/read` — `ChatsController`.
+- [x] Backend: lampiran pesan berupa produk atau pesanan (`ProductId`/`SubOrderId` di `ChatMessages`), gambar lewat `UploadsController` kategori `"chat"` baru (image-only).
+- [x] Backend: realtime — **dipilih fallback polling 5 detik + push FCM** (bukan SignalR), sesuai catatan checklist sendiri; tidak ada infrastruktur realtime di project ini dan menambahkannya di luar scope fase yang sudah menggabungkan 2 fitur besar. Indikator "online"/typing di mockup **tidak diimplementasikan** (butuh koneksi persisten). Read-receipt (centang 1/2) tetap jalan karena murni `ChatMessage.ReadAt != null`. Logika kirim pesan (bikin `ChatMessage`, update `UnreadCount`/`LastMessagePreview`, kirim push) dipusatkan di `Services/ChatService.cs` dipakai identik oleh `ChatsController` & `SellerChatsController`. Push chat dikirim langsung lewat `IPushNotificationService` tanpa baris `Notification` DB — perluasan `NotificationType` (`NewChat`, dst) sengaja disisakan untuk Fase 8.
+- [x] Backend: **ReviewsController** — `GET /api/products/{id}/reviews` (publik), `POST /api/orders/{subOrderId}/reviews` (pembeli, hanya pesanan `Completed` miliknya, produk harus ada di sub-order itu), hitung ulang `Product.RatingAverage`/`RatingCount` & `Store.RatingAverage`/`RatingCount` lewat `Services/ReviewAggregationHelper.cs`. Deviasi: dedup ulasan dipakai **per `(ProductId, UserId)`** (1 ulasan per pembeli per produk selamanya), bukan per sub-order — mengikuti unique index asli di `Review` yang ditemukan saat implementasi (409 kalau sudah pernah menilai produk itu, dari order manapun).
+- [x] Backend: `GET /api/seller/reviews/summary` (rata-rata, total, belum dibalas, distribusi bintang %) + `GET /api/seller/reviews?filter=belum-dibalas|1..5` + `POST /api/seller/reviews/{id}/reply` — `SellerReviewsController`.
+- [x] Flutter (shopy-seller): halaman **Daftar Chat** (`screens/chat/chat_list_screen.dart`) + **Ruang Chat** (`chat_room_screen.dart`: bubble, status terkirim/dibaca, balasan cepat statis client-side, lampiran gambar via `image_picker` & produk via bottom sheet `sellerProductsProvider`, polling 5 detik).
+- [x] Flutter (shopy-seller): halaman **Ulasan Produk** (`screens/review/review_list_screen.dart`: kartu ringkasan + distribusi bintang, filter chip Semua/Belum Dibalas/1-5★, form balas inline). Kedua halaman disambungkan lewat kartu "Chat" & menu "Ulasan Produk" di `store_profile_screen.dart`.
+- [x] Flutter (shopy-mobile): tombol **"Hubungi Penjual"** (`order_detail_screen.dart`) & tombol **"Chat"** baru (`screens/stores/store_profile_screen.dart`) buka/ambil room lalu push ke `ChatRoomScreen` versi ringan (teks+gambar saja, tanpa lampiran produk/quick-reply).
+- [x] Flutter (shopy-mobile): section **"Beri Ulasan"** per item di `order_detail_screen.dart` saat `SubOrder.Status == Completed` — pakai `SubOrderDetailDto.ReviewedProductIds` (field baru) untuk toggle tombol "Beri Ulasan" (bottom sheet: star picker + komentar + 1 foto opsional) vs label "✓ Sudah Dinilai".
+- [x] Flutter (shopy-mobile): Halaman Detail Produk sekarang menampilkan daftar ulasan asli (`GET /api/products/{id}/reviews`, paginated "Muat Lebih Banyak"), menggantikan placeholder teks lama.
+- [x] Tambahan (di luar plan awal, ditemukan saat menyambungkan Flutter): tombol Chat di `shopy-seller/screens/order/order_detail_screen.dart` (kartu pembeli, sejak Fase 4 masih placeholder "belum tersedia") ikut disambungkan — seller tidak bisa membuat room baru (hanya pembeli yang memulai lewat `POST /api/chats`), jadi ditambah `GET /api/seller/chats/by-buyer/{buyerUserId}` (cari room yang sudah ada dengan pembeli itu, 404 kalau pembeli itu belum pernah chat) dan `BuyerInfoDto` (`Models/Sellers/SellerOrderDtos.cs`) ditambah `UserId`.
 
 ## Fase 8 — Dashboard, Statistik & Notifikasi
 

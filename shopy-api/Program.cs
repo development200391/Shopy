@@ -45,6 +45,7 @@ builder.Services.AddScoped<IFacebookAuthService, FacebookAuthService>();
 builder.Services.AddScoped<IMidtransService, MidtransService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStoreBalanceService, StoreBalanceService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 // Singleton karena FirebaseApp cuma boleh dibuat sekali per proses.
 builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();

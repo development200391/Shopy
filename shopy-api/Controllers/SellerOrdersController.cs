@@ -201,7 +201,7 @@ public class SellerOrdersController(
 
     private static Task<SellerSubOrderDetailDto> ToDetailDtoAsync(SubOrder so, int orderCount) => Task.FromResult(new SellerSubOrderDetailDto(
         so.Id, so.SubOrderNumber, so.Status.ToString(),
-        new BuyerInfoDto(so.Order.User.FullName, so.Order.User.CreatedAt.Year, orderCount),
+        new BuyerInfoDto(so.Order.UserId, so.Order.User.FullName, so.Order.User.CreatedAt.Year, orderCount),
         new OrderAddressSnapshotDto(
             so.Order.RecipientName, so.Order.PhoneNumber, so.Order.FullAddress, so.Order.City, so.Order.Province, so.Order.PostalCode),
         so.OrderItems.Select(oi => new OrderItemDto(oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal)).ToList(),

@@ -18,6 +18,8 @@ public class UploadsController(IFileStorage fileStorage) : ControllerBase
         ["product"] = ["image/jpeg", "image/png", "image/webp"],
         ["document"] = ["image/jpeg", "image/png", "application/pdf"],
         ["proof"] = ["image/jpeg", "image/png", "image/webp"],
+        ["chat"] = ["image/jpeg", "image/png", "image/webp"],
+        ["review"] = ["image/jpeg", "image/png", "image/webp"],
     };
 
     [HttpPost]

@@ -11,10 +11,12 @@ import '../../services/seller_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
+import '../chat/chat_list_screen.dart';
 import '../finance/finance_screen.dart';
 import '../order/order_list_screen.dart';
 import '../promo/promo_voucher_screen.dart';
 import '../product/product_list_screen.dart';
+import '../review/review_list_screen.dart';
 import 'bank_accounts_screen.dart';
 import 'edit_store_profile_screen.dart';
 import 'store_addresses_screen.dart';
@@ -114,6 +116,11 @@ class _StoreProfileBody extends ConsumerWidget {
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrderListScreen())),
                   ),
                   const SizedBox(height: AppSpacing.md),
+                  _ChatCard(
+                    onTap: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen())),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   _ProductsCard(
                     productCount: store.productCount,
                     onTap: () => Navigator.of(
@@ -135,6 +142,8 @@ class _StoreProfileBody extends ConsumerWidget {
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
                     onPromo: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PromoVoucherScreen())),
+                    onReviews: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReviewListScreen())),
                     onNotAvailable: () => _notAvailableYet(context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -410,12 +419,60 @@ class _OrdersCard extends StatelessWidget {
   }
 }
 
+class _ChatCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ChatCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Chat', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Balas pesan dari pembeli', style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MenuCard extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onAddresses;
   final VoidCallback onBankAccounts;
   final VoidCallback onFinance;
   final VoidCallback onPromo;
+  final VoidCallback onReviews;
   final VoidCallback onNotAvailable;
 
   const _MenuCard({
@@ -424,6 +481,7 @@ class _MenuCard extends StatelessWidget {
     required this.onBankAccounts,
     required this.onFinance,
     required this.onPromo,
+    required this.onReviews,
     required this.onNotAvailable,
   });
 
@@ -436,7 +494,7 @@ class _MenuCard extends StatelessWidget {
       (Icons.payments_outlined, 'Keuangan & Pencairan', 'Saldo & riwayat pencairan', onFinance),
       (Icons.show_chart, 'Statistik Penjualan', 'Omzet, produk terlaris', onNotAvailable),
       (Icons.local_offer_outlined, 'Promo & Voucher', 'Kelola promo toko', onPromo),
-      (Icons.star_outline, 'Ulasan Produk', 'Balas ulasan pembeli', onNotAvailable),
+      (Icons.star_outline, 'Ulasan Produk', 'Balas ulasan pembeli', onReviews),
       (Icons.notifications_outlined, 'Pengaturan Notifikasi', 'Pesanan, chat, promo', onNotAvailable),
     ];
 

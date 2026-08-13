@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/order/seller_order_detail.dart';
+import '../../providers/seller_chat_provider.dart';
 import '../../providers/seller_order_provider.dart';
 import '../../services/seller_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
+import '../chat/chat_room_screen.dart';
 import 'ship_order_screen.dart';
 
 /// Halaman **Detail Pesanan** — desain terpilih: **Bold & Colorful**
@@ -246,13 +248,32 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-class _BuyerCard extends StatelessWidget {
+class _BuyerCard extends ConsumerWidget {
   final SellerOrderDetail order;
 
   const _BuyerCard({required this.order});
 
+  Future<void> _openChat(BuildContext context, WidgetRef ref) async {
+    try {
+      final room = await ref.read(sellerChatApiServiceProvider).findRoomByBuyer(order.buyer.userId);
+      if (!context.mounted) return;
+      if (room == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Pembeli ini belum pernah memulai percakapan.')));
+        return;
+      }
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)));
+    } on SellerException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -281,9 +302,7 @@ class _BuyerCard extends StatelessWidget {
             ),
           ),
           TextButton.icon(
-            onPressed: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Fitur chat belum tersedia.'))),
+            onPressed: () => _openChat(context, ref),
             icon: const Icon(Icons.chat_bubble_outline, size: 16),
             label: const Text('Chat'),
           ),

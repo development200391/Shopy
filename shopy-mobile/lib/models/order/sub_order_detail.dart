@@ -15,6 +15,7 @@ class SubOrderDetail {
   final SubOrderStatus status;
   final int subtotal;
   final int shippingCost;
+  final int voucherDiscount;
   final int totalAmount;
   final String? courierCode;
   final String? courierService;
@@ -24,6 +25,7 @@ class SubOrderDetail {
   final List<OrderLineItem> items;
   final List<SubOrderStatusHistoryEntry> statusHistory;
   final DateTime createdAt;
+  final List<String> reviewedProductIds;
 
   const SubOrderDetail({
     required this.id,
@@ -36,6 +38,7 @@ class SubOrderDetail {
     required this.status,
     required this.subtotal,
     required this.shippingCost,
+    this.voucherDiscount = 0,
     required this.totalAmount,
     this.courierCode,
     this.courierService,
@@ -45,6 +48,7 @@ class SubOrderDetail {
     required this.items,
     required this.statusHistory,
     required this.createdAt,
+    this.reviewedProductIds = const [],
   });
 
   factory SubOrderDetail.fromJson(Map<String, dynamic> json) {
@@ -59,6 +63,7 @@ class SubOrderDetail {
       status: SubOrderStatus.fromApiValue(json['status'] as String),
       subtotal: (json['subtotal'] as num).round(),
       shippingCost: (json['shippingCost'] as num).round(),
+      voucherDiscount: (json['voucherDiscount'] as num?)?.round() ?? 0,
       totalAmount: (json['totalAmount'] as num).round(),
       courierCode: json['courierCode'] as String?,
       courierService: json['courierService'] as String?,
@@ -70,6 +75,7 @@ class SubOrderDetail {
           .map((e) => SubOrderStatusHistoryEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      reviewedProductIds: (json['reviewedProductIds'] as List? ?? []).map((e) => e as String).toList(),
     );
   }
 }
