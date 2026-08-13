@@ -43,7 +43,10 @@ public class StoreBalanceService(ShopyDbContext dbContext) : IStoreBalanceServic
 
         balance.PendingBalance -= subOrder.SellerEarning;
 
-        var grossIncome = subOrder.Subtotal + subOrder.ShippingCost;
+        // VoucherDiscount ditanggung seller (bukan Shopy) — dilipat ke baris SaleIncome, bukan
+        // baris ledger terpisah, karena secara efektif itu mengurangi nilai jual dari sononya.
+        // Commission tetap dihitung dari Subtotal asli (dihitung saat checkout), tidak ikut berkurang.
+        var grossIncome = subOrder.Subtotal - subOrder.VoucherDiscount + subOrder.ShippingCost;
         balance.AvailableBalance += grossIncome;
         dbContext.BalanceTransactions.Add(new BalanceTransaction
         {

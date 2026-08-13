@@ -79,6 +79,39 @@ class SellerProductApiService {
     }
   }
 
+  Future<SellerProductDetail> setDiscount(
+    String id, {
+    required int discountPrice,
+    required DateTime discountStartAt,
+    required DateTime discountEndAt,
+  }) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        '/api/seller/products/$id/discount',
+        data: {
+          'discountPrice': discountPrice,
+          'discountStartAt': discountStartAt.toUtc().toIso8601String(),
+          'discountEndAt': discountEndAt.toUtc().toIso8601String(),
+        },
+      );
+      return SellerProductDetail.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw SellerException(_extractMessage(e));
+    }
+  }
+
+  Future<SellerProductDetail> clearDiscount(String id) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        '/api/seller/products/$id/discount',
+        data: {'discountPrice': null, 'discountStartAt': null, 'discountEndAt': null},
+      );
+      return SellerProductDetail.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw SellerException(_extractMessage(e));
+    }
+  }
+
   Future<void> bulkUpdate(List<Map<String, dynamic>> items) async {
     try {
       await _apiClient.dio.patch('/api/seller/products/bulk', data: {'items': items});

@@ -14,6 +14,7 @@ class ProductDetail {
   final String storeId;
   final String storeName;
   final String storeSlug;
+  final int? originalPrice;
 
   const ProductDetail({
     required this.id,
@@ -30,7 +31,10 @@ class ProductDetail {
     required this.storeId,
     required this.storeName,
     required this.storeSlug,
+    this.originalPrice,
   });
+
+  bool get isDiscounted => originalPrice != null;
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) {
     return ProductDetail(
@@ -48,6 +52,7 @@ class ProductDetail {
       storeId: json['storeId'] as String,
       storeName: json['storeName'] as String,
       storeSlug: json['storeSlug'] as String,
+      originalPrice: (json['originalPrice'] as num?)?.round(),
     );
   }
 }

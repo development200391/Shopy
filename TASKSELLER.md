@@ -261,17 +261,34 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 6 — Promo & Voucher Toko
 
-- [ ] Backend: CRUD voucher toko `GET/POST/PUT/DELETE /api/seller/vouchers` + `PATCH .../active`
-- [ ] Backend: validasi & penerapan voucher di checkout (`POST /api/vouchers/validate` untuk app pembeli) — cek kuota, periode, minimal belanja, 1 voucher per toko per transaksi, catat ke `VoucherUsages`
-- [ ] Backend: diskon produk (harga coret) — `PATCH /api/seller/products/{id}/discount` mengisi `DiscountPrice` + periode; DTO produk publik mengembalikan harga asli & harga diskon
+- [x] Backend: CRUD voucher toko `GET/POST/PUT/DELETE /api/seller/vouchers` + `PATCH .../active`
+
+  - `Controllers/SellerVouchersController.cs` (baru) + `Models/Sellers/VoucherDtos.cs`. `VoucherDto` juga membawa `Status` terhitung (`Active`/`Scheduled`/`Ended`/`Inactive` — dari tanggal+kuota, independen dari toggle `IsActive`) dan `TotalDiscountGiven`/`TotalOrderValue` (agregat `VoucherUsage`, buat tombol "Statistik" di mockup).
+- [x] Backend: validasi & penerapan voucher di checkout (`POST /api/vouchers/validate` untuk app pembeli) — cek kuota, periode, minimal belanja, 1 voucher per toko per transaksi, catat ke `VoucherUsages`
+
+  - `Services/VoucherValidationHelper.cs` (logika validasi+hitung diskon, dipakai identik oleh `Controllers/VouchersController.cs` (`POST /api/vouchers/validate`, buyer-facing) dan `OrdersController.Checkout` — checkout **tidak pernah percaya angka diskon dari client**, selalu re-validasi server-side per grup toko sebelum menerapkan). `CheckoutRequest` (`Models/Orders/OrderDtos.cs`) ditambah `Vouchers` (opsional, `{StoreId, Code}` per toko — kalau ada duplikat untuk toko yang sama, yang pertama dipakai). **Voucher = diskon yang ditanggung seller, bukan Shopy** — `SubOrder.VoucherDiscount` mengurangi `SellerEarning`, tapi `CommissionAmount` tetap dihitung dari `Subtotal` asli (Shopy tetap dapat komisi penuh). Untuk `VoucherType.FreeShipping`, `VoucherDiscount = min(Value, ShippingCost)`.
+- [x] Backend: diskon produk (harga coret) — `PATCH /api/seller/products/{id}/discount` mengisi `DiscountPrice` + periode; DTO produk publik mengembalikan harga asli & harga diskon
+
+  - `Services/PricingHelper.cs` (`EffectivePrice`/`IsDiscounted`, dipakai identik oleh `ProductsController` publik, `CartController`, dan `OrdersController.Checkout` supaya diskon otomatis berlaku konsisten di katalog, keranjang, dan checkout). `ProductListItemDto`/`ProductDetailDto`/`CartItemDto` ditambah `OriginalPrice` (nullable, cuma keisi kalau sedang diskon) — `Price` yang dikembalikan selalu harga efektif, jadi kode lama yang baca `Price` tidak perlu berubah.
 - [ ] Backend: flash sale terjadwal (opsional) — `FlashSales`/`FlashSaleItems` + endpoint publik "sedang berlangsung"
-- [ ] Backend: statistik pemakaian voucher (dipakai berapa kali, omzet yang dihasilkan)
-- [ ] Flutter: halaman **Promo & Voucher** (tab Voucher Toko / Diskon Produk / Flash Sale, kartu voucher + progress kuota, aktif/nonaktifkan, buat voucher baru)
+
+  - ⚠️ **Dilewati sepenuhnya di fase ini** — eksplisit ditandai "(opsional)" di checklist sendiri, dan cakupan fase ini sudah besar (voucher penuh + diskon produk + integrasi checkout 2 app). Skema (`FlashSale`/`FlashSaleItem`) tetap ada dari Fase 0, tinggal diisi kalau nanti dibutuhkan. Tab "Flash Sale" di halaman Promo & Voucher ditampilkan sebagai placeholder ("belum tersedia").
+- [x] Backend: statistik pemakaian voucher (dipakai berapa kali, omzet yang dihasilkan)
+
+  - Disisipkan langsung ke `VoucherDto` (`TotalDiscountGiven`/`TotalOrderValue`, dihitung on-the-fly dari `VoucherUsage` tiap kali diambil) — bukan endpoint/halaman statistik terpisah, cukup buat tombol "Statistik" di mockup yang cuma butuh angka ringkas.
+- [x] Flutter: halaman **Promo & Voucher** (tab Voucher Toko / Diskon Produk / Flash Sale, kartu voucher + progress kuota, aktif/nonaktifkan, buat voucher baru)
 
   ![Mockup Promo & Voucher - Bold & Colorful](./shopy-seller/design/assets/promo-voucher-seller-bold-colorful.png)
 
-- [ ] Flutter: form Buat/Ubah Voucher (kode, tipe, nilai, maksimal diskon, minimal belanja, kuota, periode)
-- ⚠️ Perubahan di app pembeli: kode promo masih di-hardcode di Flutter (`kMockPromoCode = 'HEMAT20'` di `providers/cart_provider.dart`, dipakai `widgets/cart/promo_code_section.dart`) — ganti dengan panggilan ke endpoint validasi voucher. Kartu produk & Detail Produk perlu menampilkan harga coret (TASKS.md Fase 2 sudah mencatat ini sebagai bagian mockup yang dilewati karena field diskon belum ada).
+  - `shopy-seller/lib/screens/promo/promo_voucher_screen.dart` — 3 tab. **Voucher Toko**: kartu voucher (status badge, progress bar kuota, toggle `IsActive`, tombol Ubah/Statistik), tombol "Buat Voucher Baru". **Diskon Produk**: reuse `sellerProductsProvider` (Fase 3), tiap produk tampilkan harga coret kalau sedang diskon + tombol Atur/Ubah Diskon → `product_discount_sheet.dart` (bottom sheet set/ubah/hapus). **Flash Sale**: placeholder.
+- [x] Flutter: form Buat/Ubah Voucher (kode, tipe, nilai, maksimal diskon, minimal belanja, kuota, periode)
+
+  - `shopy-seller/lib/screens/promo/voucher_form_screen.dart` — 1 screen dipakai create & edit (pola sama `ProductFormScreen` Fase 3), field maksimal diskon disembunyikan untuk tipe `FreeShipping`. Menu "Promo & Voucher" di `store_profile_screen.dart` diarahkan ke halaman ini (sebelumnya `onNotAvailable`).
+- [x] Perubahan di app pembeli: kode promo masih di-hardcode di Flutter (`kMockPromoCode = 'HEMAT20'` di `providers/cart_provider.dart`, dipakai `widgets/cart/promo_code_section.dart`) — ganti dengan panggilan ke endpoint validasi voucher. Kartu produk & Detail Produk perlu menampilkan harga coret (TASKS.md Fase 2 sudah mencatat ini sebagai bagian mockup yang dilewati karena field diskon belum ada).
+
+  - `kMockPromoCode`/`kMockPromoDiscount`/`applyPromoCode`/`clearPromo`/`hasPromo`/`promoCode`/`promoDiscount` **dihapus** dari `cart_state.dart`/`cart_provider.dart` (bukan didiamkan) — begitu juga file `widgets/cart/promo_code_section.dart` dan pemakaiannya di `cart_screen.dart`/`checkout_summary_sheet.dart`. ⚠️ **Voucher pindah dari Keranjang (1 kode global) ke Checkout (per toko)** — karena `Voucher` scope-nya per `StoreId` sejak awal, dan sejak Fase 4 checkout sudah dikelompokkan per toko. Tiap `_StoreOrderGroup` di `checkout_screen.dart` sekarang punya bagian "Punya kode voucher toko ini?" sendiri (dialog input → `POST /api/vouchers/validate` dengan `StoreId` grup itu), state lokal `Map<storeId, (code, discountAmount)>` dikirim sebagai `vouchers` saat submit.
+  - `models/catalog/product_summary.dart`/`product_detail.dart`/`models/cart/cart_item.dart` ditambah `originalPrice` nullable + getter `isDiscounted` — kartu produk (Home/Search), Detail Produk, dan `CartItemCard` menampilkan harga asli dicoret di atas harga efektif kalau sedang diskon.
+- ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error/warning. Alur penuh diuji lewat `curl`: seller set diskon produk (100rb→80rb) → `GET /api/products` publik & keranjang tampilkan harga diskon+`originalPrice` benar → seller buat voucher `FixedAmount` (min. belanja, kuota 2) → `POST /api/vouchers/validate` (subtotal kurang dari minimal → invalid; cukup → valid+jumlah benar) → checkout dengan voucher → `SubOrder.VoucherDiscount`/`SellerEarning`/`Order.TotalAmount` benar (komisi tetap dihitung dari subtotal asli), `Voucher.UsedCount` naik, `VoucherUsage` tercatat → settle→accept→ship→buyer `Completed` → `GET /api/seller/finance/balance` & mutasi saldo (Fase 5) mencerminkan `SellerEarning` net-diskon dengan benar → checkout ke-2 pakai kode sama (kuota jadi 2/2) → checkout ke-3 dengan kode sama ditolak `400` ("Kuota voucher sudah habis") → `GET /api/seller/vouchers/{id}` tampilkan statistik terhitung benar. Regresi: `GET /api/products` normal untuk produk tanpa diskon. `flutter analyze` + `flutter test` bersih di **kedua** app. Verifikasi visual manual belum dilakukan (sama seperti fase-fase sebelumnya).
 
 ## Fase 7 — Chat & Ulasan
 

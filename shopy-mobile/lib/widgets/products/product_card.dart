@@ -61,6 +61,15 @@ class ProductCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
             const SizedBox(height: 4),
+            if (product.isDiscounted)
+              Text(
+                formatRupiah(product.originalPrice!),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  decoration: TextDecoration.lineThrough,
+                ),
+              ),
             Text(
               formatRupiah(product.price),
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),

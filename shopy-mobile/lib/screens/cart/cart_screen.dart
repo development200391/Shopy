@@ -10,7 +10,6 @@ import '../../widgets/cart/cart_checkout_bar.dart';
 import '../../widgets/cart/cart_item_card.dart';
 import '../../widgets/cart/delete_confirm_sheet.dart';
 import '../../widgets/cart/empty_cart_view.dart';
-import '../../widgets/cart/promo_code_section.dart';
 import '../../widgets/shared/app_bottom_nav.dart';
 import '../home/home_screen.dart';
 import '../orders/order_history_screen.dart';
@@ -141,16 +140,13 @@ class _CartBody extends ConsumerWidget {
           ],
           const Divider(),
           const SizedBox(height: AppSpacing.sm),
-          const PromoCodeSection(),
-          const SizedBox(height: AppSpacing.md),
           _SummaryLine(label: 'Subtotal Produk', value: formatRupiah(cart.subtotal)),
           _SummaryLine(label: 'Ongkos Kirim', value: formatRupiah(cart.shippingCost)),
-          if (cart.hasPromo)
-            _SummaryLine(
-              label: 'Diskon Voucher',
-              value: '-${formatRupiah(cart.promoDiscount)}',
-              valueColor: AppColors.primary,
-            ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Kode voucher toko bisa dipakai di halaman Checkout.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
@@ -192,9 +188,8 @@ class _StoreGroupHeader extends StatelessWidget {
 class _SummaryLine extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
 
-  const _SummaryLine({required this.label, required this.value, this.valueColor});
+  const _SummaryLine({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +199,7 @@ class _SummaryLine extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-          Text(value, style: TextStyle(color: valueColor ?? AppColors.textPrimary, fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
         ],
       ),
     );

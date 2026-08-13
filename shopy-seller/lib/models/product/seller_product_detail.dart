@@ -13,6 +13,9 @@ class SellerProductDetail {
   final String categoryName;
   final bool isActive;
   final List<ProductImage> images;
+  final int? discountPrice;
+  final DateTime? discountStartAt;
+  final DateTime? discountEndAt;
 
   const SellerProductDetail({
     required this.id,
@@ -27,7 +30,12 @@ class SellerProductDetail {
     required this.categoryName,
     required this.isActive,
     required this.images,
+    this.discountPrice,
+    this.discountStartAt,
+    this.discountEndAt,
   });
+
+  bool get isDiscounted => discountPrice != null;
 
   factory SellerProductDetail.fromJson(Map<String, dynamic> json) {
     return SellerProductDetail(
@@ -45,6 +53,9 @@ class SellerProductDetail {
       images: (json['images'] as List)
           .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
           .toList(),
+      discountPrice: (json['discountPrice'] as num?)?.round(),
+      discountStartAt: json['discountStartAt'] == null ? null : DateTime.parse(json['discountStartAt'] as String),
+      discountEndAt: json['discountEndAt'] == null ? null : DateTime.parse(json['discountEndAt'] as String),
     );
   }
 }

@@ -50,7 +50,13 @@ class OrderApiService {
     }
   }
 
-  Future<OrderDetail> checkout({required String addressId, required List<String> cartItemIds, String? note}) async {
+  /// `vouchers`: 1 entry per toko yang mau pakai kode voucher, `{storeId: code}`.
+  Future<OrderDetail> checkout({
+    required String addressId,
+    required List<String> cartItemIds,
+    String? note,
+    Map<String, String> vouchers = const {},
+  }) async {
     try {
       final response = await _apiClient.dio.post(
         '/api/orders',
@@ -58,6 +64,10 @@ class OrderApiService {
           'addressId': addressId,
           'cartItemIds': cartItemIds,
           if (note != null && note.isNotEmpty) 'note': note,
+          if (vouchers.isNotEmpty)
+            'vouchers': [
+              for (final entry in vouchers.entries) {'storeId': entry.key, 'code': entry.value},
+            ],
         },
       );
       return OrderDetail.fromJson(response.data as Map<String, dynamic>);

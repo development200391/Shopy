@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using shopy_api.Data;
 using shopy_api.Models.Catalog;
+using shopy_api.Services;
 
 namespace shopy_api.Controllers;
 
@@ -59,14 +60,18 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
         };
 
         var totalCount = await products.CountAsync();
-        var items = await products
+        var pageItems = await products
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new ProductListItemDto(
-                p.Id, p.Name, p.Slug, p.Price, p.ImageUrl,
-                p.RatingAverage, p.RatingCount, p.CategoryId, p.Category.Name,
-                p.StoreId, p.Store.Name, p.Store.Slug))
+            .Include(p => p.Category)
+            .Include(p => p.Store)
             .ToListAsync();
+
+        var items = pageItems.Select(p => new ProductListItemDto(
+            p.Id, p.Name, p.Slug, PricingHelper.EffectivePrice(p), p.ImageUrl,
+            p.RatingAverage, p.RatingCount, p.CategoryId, p.Category.Name,
+            p.StoreId, p.Store.Name, p.Store.Slug,
+            PricingHelper.IsDiscounted(p) ? p.Price : null)).ToList();
 
         return Ok(new PagedResult<ProductListItemDto>(items, page, pageSize, totalCount));
     }
@@ -86,10 +91,11 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
         }
 
         var dto = new ProductDetailDto(
-            product.Id, product.Name, product.Slug, product.Description, product.Price,
+            product.Id, product.Name, product.Slug, product.Description, PricingHelper.EffectivePrice(product),
             product.Stock, product.ImageUrl, product.RatingAverage, product.RatingCount,
             product.CategoryId, product.Category.Name, product.CreatedAt,
-            product.StoreId, product.Store.Name, product.Store.Slug);
+            product.StoreId, product.Store.Name, product.Store.Slug,
+            PricingHelper.IsDiscounted(product) ? product.Price : null);
 
         return Ok(dto);
     }

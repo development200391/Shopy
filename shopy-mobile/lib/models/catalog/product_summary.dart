@@ -13,6 +13,7 @@ class ProductSummary {
   final String storeId;
   final String storeName;
   final String storeSlug;
+  final int? originalPrice;
 
   const ProductSummary({
     required this.id,
@@ -27,7 +28,10 @@ class ProductSummary {
     required this.storeId,
     required this.storeName,
     required this.storeSlug,
+    this.originalPrice,
   });
+
+  bool get isDiscounted => originalPrice != null;
 
   factory ProductSummary.fromJson(Map<String, dynamic> json) {
     return ProductSummary(
@@ -43,6 +47,7 @@ class ProductSummary {
       storeId: json['storeId'] as String,
       storeName: json['storeName'] as String,
       storeSlug: json['storeSlug'] as String,
+      originalPrice: (json['originalPrice'] as num?)?.round(),
     );
   }
 }

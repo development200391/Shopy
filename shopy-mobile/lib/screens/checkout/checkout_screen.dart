@@ -7,6 +7,7 @@ import '../../providers/address_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/cart_state.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/voucher_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
@@ -14,6 +15,8 @@ import '../../widgets/address/address_form_sheet.dart';
 import '../../widgets/checkout/address_picker_sheet.dart';
 import '../../widgets/shared/placeholder_thumbnail.dart';
 import 'checkout_success_screen.dart';
+
+typedef _AppliedVoucher = ({String code, int discountAmount});
 
 /// Halaman Checkout. Desain terpilih: **Bold & Colorful** (lihat
 /// `UI Design - Checkout, Payment, Notifikasi/01_checkout_utama.png`).
@@ -31,6 +34,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _noteController = TextEditingController();
   Address? _selectedAddress;
   bool _submitting = false;
+  final Map<String, _AppliedVoucher> _appliedVouchers = {};
 
   @override
   void dispose() {
@@ -52,7 +56,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final storeGroups = cart.selectedStoreGroups;
     final subtotal = items.fold(0, (sum, item) => sum + item.subtotal);
     final shippingCost = storeGroups.length * kMockShippingCost;
-    final total = subtotal + shippingCost;
+    final storeIds = storeGroups.map((g) => g.storeId).toSet();
+    final voucherDiscount = storeIds.fold(
+      0,
+      (sum, storeId) => sum + (_appliedVouchers[storeId]?.discountAmount ?? 0),
+    );
+    final total = subtotal + shippingCost - voucherDiscount;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -78,7 +87,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const _SectionLabel('Produk Dipesan'),
                 const SizedBox(height: AppSpacing.sm),
-                for (final group in storeGroups) _StoreOrderGroup(group: group),
+                for (final group in storeGroups)
+                  _StoreOrderGroup(
+                    group: group,
+                    appliedVoucher: _appliedVouchers[group.storeId],
+                    onVoucherChanged: (applied) => setState(() {
+                      if (applied == null) {
+                        _appliedVouchers.remove(group.storeId);
+                      } else {
+                        _appliedVouchers[group.storeId] = applied;
+                      }
+                    }),
+                  ),
                 const SizedBox(height: AppSpacing.sm),
                 const _SectionLabel('Catatan untuk Penjual (Opsional)'),
                 const SizedBox(height: AppSpacing.sm),
@@ -99,6 +119,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 const Divider(),
                 _SummaryRow(label: 'Subtotal Produk', value: formatRupiah(subtotal)),
                 _SummaryRow(label: 'Ongkos Kirim', value: formatRupiah(shippingCost)),
+                if (voucherDiscount > 0)
+                  _SummaryRow(
+                    label: 'Diskon Voucher',
+                    value: '-${formatRupiah(voucherDiscount)}',
+                  ),
                 const SizedBox(height: AppSpacing.xl),
               ],
             ),
@@ -168,6 +193,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             addressId: address.id,
             cartItemIds: ref.read(cartProvider).selectedItems.map((item) => item.id).toList(),
             note: _noteController.text.trim(),
+            vouchers: {
+              for (final entry in _appliedVouchers.entries) entry.key: entry.value.code,
+            },
           );
       await ref.read(cartProvider.notifier).reload();
       if (!mounted) return;
@@ -269,13 +297,73 @@ class _AddressCard extends StatelessWidget {
   }
 }
 
-class _StoreOrderGroup extends StatelessWidget {
+class _StoreOrderGroup extends ConsumerStatefulWidget {
   final CartStoreGroup group;
+  final _AppliedVoucher? appliedVoucher;
+  final ValueChanged<_AppliedVoucher?> onVoucherChanged;
 
-  const _StoreOrderGroup({required this.group});
+  const _StoreOrderGroup({required this.group, required this.appliedVoucher, required this.onVoucherChanged});
+
+  @override
+  ConsumerState<_StoreOrderGroup> createState() => _StoreOrderGroupState();
+}
+
+class _StoreOrderGroupState extends ConsumerState<_StoreOrderGroup> {
+  bool _validating = false;
+
+  Future<void> _openVoucherDialog() async {
+    final controller = TextEditingController(text: widget.appliedVoucher?.code ?? '');
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Kode Voucher ${widget.group.storeName}'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Contoh: HEMAT10'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Terapkan'),
+          ),
+        ],
+      ),
+    );
+    if (code == null || code.trim().isEmpty) return;
+    if (!context.mounted) return;
+
+    setState(() => _validating = true);
+    try {
+      final result = await ref
+          .read(voucherApiServiceProvider)
+          .validate(
+            storeId: widget.group.storeId,
+            code: code.trim(),
+            subtotal: widget.group.subtotal,
+            shippingCost: kMockShippingCost,
+          );
+      if (!mounted) return;
+      if (result.valid) {
+        widget.onVoucherChanged((code: code.trim().toUpperCase(), discountAmount: result.discountAmount));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message ?? 'Voucher tidak valid'), backgroundColor: AppColors.error),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: AppColors.error));
+    } finally {
+      if (mounted) setState(() => _validating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final group = widget.group;
+    final applied = widget.appliedVoucher;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
@@ -316,6 +404,49 @@ class _StoreOrderGroup extends StatelessWidget {
                   style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          InkWell(
+            onTap: _validating ? null : _openVoucherDialog,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: applied != null ? AppColors.primary.withValues(alpha: 0.08) : AppColors.background,
+                borderRadius: BorderRadius.circular(14),
+                border: applied != null ? Border.all(color: AppColors.primary) : null,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.confirmation_number_outlined,
+                    color: applied != null ? AppColors.primary : AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      applied != null
+                          ? '${applied.code} diterapkan (-${formatRupiah(applied.discountAmount)})'
+                          : 'Punya kode voucher toko ini?',
+                      style: TextStyle(
+                        color: applied != null ? AppColors.primary : AppColors.textSecondary,
+                        fontWeight: applied != null ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  if (_validating)
+                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  else if (applied != null)
+                    TextButton(
+                      onPressed: () => widget.onVoucherChanged(null),
+                      child: const Text('Hapus'),
+                    )
+                  else
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                ],
+              ),
             ),
           ),
         ],

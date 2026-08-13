@@ -82,6 +82,14 @@ class CartItemCard extends ConsumerWidget {
                         ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 6),
+                      if (item.isDiscounted)
+                        Text(
+                          formatRupiah(item.originalPrice!),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
                       Text(
                         formatRupiah(item.price),
                         style: Theme.of(

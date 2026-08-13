@@ -10,7 +10,10 @@ public record SellerProductListItemDto(
     string? ImageUrl,
     int Stock,
     bool IsActive,
-    int SoldCount);
+    int SoldCount,
+    decimal? DiscountPrice = null,
+    DateTime? DiscountStartAt = null,
+    DateTime? DiscountEndAt = null);
 
 public record SellerProductDetailDto(
     Guid Id,
@@ -24,7 +27,12 @@ public record SellerProductDetailDto(
     Guid CategoryId,
     string CategoryName,
     bool IsActive,
-    IReadOnlyList<ProductImageDto> Images);
+    IReadOnlyList<ProductImageDto> Images,
+    decimal? DiscountPrice = null,
+    DateTime? DiscountStartAt = null,
+    DateTime? DiscountEndAt = null);
+
+public record SetProductDiscountRequest(decimal? DiscountPrice, DateTime? DiscountStartAt, DateTime? DiscountEndAt);
 
 public record SaveProductRequest(
     string Name,

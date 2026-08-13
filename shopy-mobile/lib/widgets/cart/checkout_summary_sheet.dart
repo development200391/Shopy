@@ -73,12 +73,6 @@ void showCheckoutSummarySheet(BuildContext context) {
                 const SizedBox(height: AppSpacing.md),
                 _SummaryRow(label: 'Subtotal Produk', value: formatRupiah(cart.subtotal)),
                 _SummaryRow(label: 'Ongkos Kirim', value: formatRupiah(cart.shippingCost)),
-                if (cart.hasPromo)
-                  _SummaryRow(
-                    label: 'Diskon Voucher',
-                    value: '-${formatRupiah(cart.promoDiscount)}',
-                    valueColor: AppColors.primary,
-                  ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Divider(),
@@ -110,23 +104,18 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final bool bold;
-  final Color? valueColor;
 
-  const _SummaryRow({required this.label, required this.value, this.bold = false, this.valueColor});
+  const _SummaryRow({required this.label, required this.value, this.bold = false});
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-      color: valueColor ?? (bold ? AppColors.textPrimary : AppColors.textSecondary),
-    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: style.copyWith(color: bold ? AppColors.textPrimary : AppColors.textSecondary)),
-          Text(value, style: style.copyWith(color: valueColor ?? AppColors.textPrimary)),
+          Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, color: bold ? AppColors.textPrimary : AppColors.textSecondary)),
+          Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, color: AppColors.textPrimary)),
         ],
       ),
     );

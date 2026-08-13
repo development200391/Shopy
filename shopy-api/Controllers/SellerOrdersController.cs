@@ -55,7 +55,7 @@ public class SellerOrdersController(
 
         var items = subOrders.Select(so => new SellerSubOrderListItemDto(
             so.Id, so.SubOrderNumber, so.Status.ToString(), so.Order.User.FullName, so.OrderItems.Count,
-            so.OrderItems.Take(3).Select(oi => oi.Product.ImageUrl).ToList(), so.Subtotal + so.ShippingCost,
+            so.OrderItems.Take(3).Select(oi => oi.Product.ImageUrl).ToList(), so.Subtotal + so.ShippingCost - so.VoucherDiscount,
             so.AutoCancelAt, so.CreatedAt)).ToList();
 
         return Ok(new PagedResult<SellerSubOrderListItemDto>(items, page, pageSize, totalCount));
@@ -205,7 +205,8 @@ public class SellerOrdersController(
         new OrderAddressSnapshotDto(
             so.Order.RecipientName, so.Order.PhoneNumber, so.Order.FullAddress, so.Order.City, so.Order.Province, so.Order.PostalCode),
         so.OrderItems.Select(oi => new OrderItemDto(oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal)).ToList(),
-        so.Subtotal, so.ShippingCost, so.CommissionAmount, so.SellerEarning, so.Subtotal + so.ShippingCost,
+        so.Subtotal, so.ShippingCost, so.VoucherDiscount, so.CommissionAmount, so.SellerEarning,
+        so.Subtotal + so.ShippingCost - so.VoucherDiscount,
         so.CourierCode, so.CourierService, so.TrackingNumber, so.ProofPhotoUrl,
         so.Order.Note, so.CancelReason, so.AutoCancelAt,
         so.StatusHistories.OrderBy(h => h.ChangedAt).Select(h => new SubOrderStatusHistoryDto(h.Status.ToString(), h.Note, h.ChangedAt)).ToList(),

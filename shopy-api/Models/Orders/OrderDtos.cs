@@ -24,4 +24,7 @@ public record OrderDetailDto(
     IReadOnlyList<SubOrderSummaryDto> SubOrders,
     DateTime CreatedAt);
 
-public record CheckoutRequest(Guid AddressId, IReadOnlyList<Guid> CartItemIds, string? Note);
+public record CheckoutVoucherDto(Guid StoreId, string Code);
+
+public record CheckoutRequest(
+    Guid AddressId, IReadOnlyList<Guid> CartItemIds, string? Note, IReadOnlyList<CheckoutVoucherDto>? Vouchers = null);

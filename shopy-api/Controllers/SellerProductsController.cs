@@ -63,7 +63,8 @@ public partial class SellerProductsController(ShopyDbContext dbContext) : Contro
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new SellerProductListItemDto(
-                p.Id, p.Name, p.Slug, p.Price, p.ImageUrl, p.Stock, p.IsActive, p.SoldCount))
+                p.Id, p.Name, p.Slug, p.Price, p.ImageUrl, p.Stock, p.IsActive, p.SoldCount,
+                p.DiscountPrice, p.DiscountStartAt, p.DiscountEndAt))
             .ToListAsync();
 
         return Ok(new PagedResult<SellerProductListItemDto>(items, page, pageSize, totalCount));
@@ -221,6 +222,38 @@ public partial class SellerProductsController(ShopyDbContext dbContext) : Contro
         return await GetProduct(product.Id);
     }
 
+    [HttpPatch("{id:guid}/discount")]
+    public async Task<ActionResult<SellerProductDetailDto>> SetDiscount(Guid id, SetProductDiscountRequest request)
+    {
+        var storeId = await GetMyStoreIdAsync();
+        var product = await dbContext.Products.SingleOrDefaultAsync(p => p.Id == id && p.StoreId == storeId);
+        if (product is null)
+        {
+            return NotFound(new { message = "Produk tidak ditemukan." });
+        }
+
+        // DiscountPrice null = hapus diskon (dipakai tombol "Hapus Diskon").
+        if (request.DiscountPrice is not null)
+        {
+            if (request.DiscountPrice >= product.Price)
+            {
+                return BadRequest(new { message = "Harga diskon harus lebih murah dari harga normal." });
+            }
+            if (request.DiscountStartAt is null || request.DiscountEndAt is null || request.DiscountEndAt <= request.DiscountStartAt)
+            {
+                return BadRequest(new { message = "Periode diskon tidak valid." });
+            }
+        }
+
+        product.DiscountPrice = request.DiscountPrice;
+        product.DiscountStartAt = request.DiscountPrice is null ? null : request.DiscountStartAt;
+        product.DiscountEndAt = request.DiscountPrice is null ? null : request.DiscountEndAt;
+        product.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
+
+        return await GetProduct(product.Id);
+    }
+
     [HttpPatch("bulk")]
     public async Task<IActionResult> BulkUpdate(BulkUpdateProductsRequest request)
     {
@@ -298,7 +331,8 @@ public partial class SellerProductsController(ShopyDbContext dbContext) : Contro
     private static SellerProductDetailDto ToDetailDto(Product product) => new(
         product.Id, product.Name, product.Slug, product.Description, product.Price, product.Stock,
         product.Weight, product.Condition.ToString(), product.CategoryId, product.Category.Name, product.IsActive,
-        product.Images.Select(i => new ProductImageDto(i.Id, i.Url, i.SortOrder, i.IsPrimary)).ToList());
+        product.Images.Select(i => new ProductImageDto(i.Id, i.Url, i.SortOrder, i.IsPrimary)).ToList(),
+        product.DiscountPrice, product.DiscountStartAt, product.DiscountEndAt);
 
     [GeneratedRegex("[^a-z0-9]+")]
     private static partial Regex NonAlphanumericRegex();

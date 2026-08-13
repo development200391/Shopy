@@ -102,6 +102,12 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
         var now = DateTime.UtcNow;
         var orderNumber = await GenerateOrderNumberAsync();
 
+        // Cuma 1 kode voucher per toko per transaksi — kalau client kirim >1 buat toko yang
+        // sama, ambil yang pertama saja.
+        var voucherCodeByStore = request.Vouchers?
+            .GroupBy(v => v.StoreId)
+            .ToDictionary(g => g.Key, g => g.First().Code) ?? [];
+
         var order = new Order
         {
             Id = Guid.NewGuid(),
@@ -125,8 +131,22 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
         foreach (var group in storeGroups)
         {
             seq++;
-            var subtotal = group.Sum(ci => ci.Product.Price * ci.Quantity);
+            var subtotal = group.Sum(ci => PricingHelper.EffectivePrice(ci.Product) * ci.Quantity);
             var commissionAmount = Math.Round(subtotal * commissionPercent / 100m, 2);
+
+            Voucher? voucher = null;
+            var voucherDiscount = 0m;
+            if (voucherCodeByStore.TryGetValue(group.Key, out var rawCode))
+            {
+                var code = rawCode.Trim().ToUpperInvariant();
+                voucher = await dbContext.Vouchers.SingleOrDefaultAsync(v => v.StoreId == group.Key && v.Code == code);
+                var validation = VoucherValidationHelper.Validate(voucher, subtotal, courier.Price, now);
+                if (!validation.Valid)
+                {
+                    return BadRequest(new { message = $"Voucher {code}: {validation.Message}" });
+                }
+                voucherDiscount = validation.DiscountAmount;
+            }
 
             var subOrder = new SubOrder
             {
@@ -137,8 +157,9 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
                 Status = SubOrderStatus.WaitingPayment,
                 Subtotal = subtotal,
                 ShippingCost = courier.Price,
+                VoucherDiscount = voucherDiscount,
                 CommissionAmount = commissionAmount,
-                SellerEarning = subtotal + courier.Price - commissionAmount,
+                SellerEarning = subtotal + courier.Price - commissionAmount - voucherDiscount,
                 CreatedAt = now,
                 UpdatedAt = now,
             };
@@ -150,8 +171,23 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
                 ChangedAt = now,
             });
 
+            if (voucher is not null && voucherDiscount > 0)
+            {
+                voucher.UsedCount++;
+                dbContext.VoucherUsages.Add(new VoucherUsage
+                {
+                    Id = Guid.NewGuid(),
+                    VoucherId = voucher.Id,
+                    UserId = userId,
+                    SubOrderId = subOrder.Id,
+                    DiscountAmount = voucherDiscount,
+                    UsedAt = now,
+                });
+            }
+
             foreach (var item in group)
             {
+                var unitPrice = PricingHelper.EffectivePrice(item.Product);
                 order.OrderItems.Add(new OrderItem
                 {
                     Id = Guid.NewGuid(),
@@ -159,9 +195,9 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
                     ProductId = item.ProductId,
                     SubOrderId = subOrder.Id,
                     ProductNameSnapshot = item.Product.Name,
-                    UnitPrice = item.Product.Price,
+                    UnitPrice = unitPrice,
                     Quantity = item.Quantity,
-                    Subtotal = item.Product.Price * item.Quantity,
+                    Subtotal = unitPrice * item.Quantity,
                 });
             }
 
@@ -169,7 +205,7 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
         }
 
         order.ShippingCost = order.SubOrders.Sum(so => so.ShippingCost);
-        order.TotalAmount = order.SubOrders.Sum(so => so.Subtotal + so.ShippingCost);
+        order.TotalAmount = order.SubOrders.Sum(so => so.Subtotal + so.ShippingCost - so.VoucherDiscount);
 
         foreach (var item in cartItems)
         {

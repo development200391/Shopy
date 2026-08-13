@@ -35,18 +35,10 @@ List<CartStoreGroup> _groupByStore(List<CartItem> items) {
 
 class CartState {
   final List<CartItem> items;
-  final String? promoCode;
-  final int promoDiscount;
   final bool loading;
   final String? error;
 
-  const CartState({
-    this.items = const [],
-    this.promoCode,
-    this.promoDiscount = 0,
-    this.loading = false,
-    this.error,
-  });
+  const CartState({this.items = const [], this.loading = false, this.error});
 
   bool get isEmpty => items.isEmpty;
 
@@ -69,23 +61,13 @@ class CartState {
   /// backend membuat 1 `SubOrder` (+ 1 ongkir) per toko saat checkout.
   int get shippingCost => selectedStoreGroups.length * kMockShippingCost;
 
-  int get total => subtotal - promoDiscount + shippingCost;
+  /// Diskon voucher toko baru diketahui di halaman Checkout (per toko, lihat
+  /// `checkout_screen.dart`) — total di level Keranjang murni subtotal+ongkir.
+  int get total => subtotal + shippingCost;
 
-  bool get hasPromo => promoCode != null;
-
-  CartState copyWith({
-    List<CartItem>? items,
-    String? promoCode,
-    int? promoDiscount,
-    bool clearPromo = false,
-    bool? loading,
-    String? error,
-    bool clearError = false,
-  }) {
+  CartState copyWith({List<CartItem>? items, bool? loading, String? error, bool clearError = false}) {
     return CartState(
       items: items ?? this.items,
-      promoCode: clearPromo ? null : (promoCode ?? this.promoCode),
-      promoDiscount: clearPromo ? 0 : (promoDiscount ?? this.promoDiscount),
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
     );

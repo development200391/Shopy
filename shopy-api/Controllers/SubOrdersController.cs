@@ -126,12 +126,13 @@ public class SubOrdersController(
 
     public static SubOrderSummaryDto ToSummaryDto(SubOrder so) => new(
         so.Id, so.SubOrderNumber, so.OrderId, so.Order.OrderNumber, so.StoreId, so.Store.Name, so.Store.LogoUrl,
-        so.Status.ToString(), so.Subtotal, so.ShippingCost, so.Subtotal + so.ShippingCost, so.OrderItems.Count,
+        so.Status.ToString(), so.Subtotal, so.ShippingCost, so.VoucherDiscount,
+        so.Subtotal + so.ShippingCost - so.VoucherDiscount, so.OrderItems.Count,
         so.OrderItems.Take(3).Select(oi => oi.Product.ImageUrl).ToList(), so.CreatedAt);
 
     public static SubOrderDetailDto ToDetailDto(SubOrder so) => new(
         so.Id, so.SubOrderNumber, so.OrderId, so.Order.OrderNumber, so.StoreId, so.Store.Name, so.Store.LogoUrl,
-        so.Status.ToString(), so.Subtotal, so.ShippingCost, so.Subtotal + so.ShippingCost,
+        so.Status.ToString(), so.Subtotal, so.ShippingCost, so.VoucherDiscount, so.Subtotal + so.ShippingCost - so.VoucherDiscount,
         so.CourierCode, so.CourierService, so.TrackingNumber,
         new OrderAddressSnapshotDto(
             so.Order.RecipientName, so.Order.PhoneNumber, so.Order.FullAddress, so.Order.City, so.Order.Province, so.Order.PostalCode),

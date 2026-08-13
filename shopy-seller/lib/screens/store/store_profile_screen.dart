@@ -13,6 +13,7 @@ import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
 import '../finance/finance_screen.dart';
 import '../order/order_list_screen.dart';
+import '../promo/promo_voucher_screen.dart';
 import '../product/product_list_screen.dart';
 import 'bank_accounts_screen.dart';
 import 'edit_store_profile_screen.dart';
@@ -132,6 +133,8 @@ class _StoreProfileBody extends ConsumerWidget {
                     ).push(MaterialPageRoute(builder: (_) => const BankAccountsScreen())),
                     onFinance: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
+                    onPromo: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PromoVoucherScreen())),
                     onNotAvailable: () => _notAvailableYet(context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -412,6 +415,7 @@ class _MenuCard extends StatelessWidget {
   final VoidCallback onAddresses;
   final VoidCallback onBankAccounts;
   final VoidCallback onFinance;
+  final VoidCallback onPromo;
   final VoidCallback onNotAvailable;
 
   const _MenuCard({
@@ -419,6 +423,7 @@ class _MenuCard extends StatelessWidget {
     required this.onAddresses,
     required this.onBankAccounts,
     required this.onFinance,
+    required this.onPromo,
     required this.onNotAvailable,
   });
 
@@ -430,7 +435,7 @@ class _MenuCard extends StatelessWidget {
       (Icons.account_balance_outlined, 'Rekening Bank', 'Buat pencairan dana', onBankAccounts),
       (Icons.payments_outlined, 'Keuangan & Pencairan', 'Saldo & riwayat pencairan', onFinance),
       (Icons.show_chart, 'Statistik Penjualan', 'Omzet, produk terlaris', onNotAvailable),
-      (Icons.local_offer_outlined, 'Promo & Voucher', 'Kelola promo toko', onNotAvailable),
+      (Icons.local_offer_outlined, 'Promo & Voucher', 'Kelola promo toko', onPromo),
       (Icons.star_outline, 'Ulasan Produk', 'Balas ulasan pembeli', onNotAvailable),
       (Icons.notifications_outlined, 'Pengaturan Notifikasi', 'Pesanan, chat, promo', onNotAvailable),
     ];

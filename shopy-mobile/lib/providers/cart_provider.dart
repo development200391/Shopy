@@ -5,11 +5,6 @@ import '../services/cart_api_service.dart';
 import 'auth_provider.dart';
 import 'cart_state.dart';
 
-/// Kode voucher contoh yang dipakai untuk mendemokan alur promo di UI.
-/// Nanti diganti validasi lewat backend saat endpoint cart/promo sudah ada.
-const String kMockPromoCode = 'HEMAT20';
-const int kMockPromoDiscount = 20000;
-
 final cartApiServiceProvider = Provider<CartApiService>((ref) {
   return CartApiService(ref.watch(apiClientProvider));
 });
@@ -79,7 +74,7 @@ class CartNotifier extends Notifier<CartState> {
   Future<void> removeItem(String id) async {
     try {
       final items = await _api.removeItem(id);
-      state = state.copyWith(items: _mergeSelected(items), clearPromo: items.isEmpty, clearError: true);
+      state = state.copyWith(items: _mergeSelected(items), clearError: true);
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
@@ -102,18 +97,6 @@ class CartNotifier extends Notifier<CartState> {
   Future<void> addItem({required String productId, int qty = 1}) async {
     final items = await _api.addItem(productId, qty);
     state = state.copyWith(items: _mergeSelected(items), clearError: true);
-  }
-
-  /// Return true kalau kode valid & berhasil diterapkan.
-  bool applyPromoCode(String code) {
-    final normalized = code.trim().toUpperCase();
-    if (normalized != kMockPromoCode) return false;
-    state = state.copyWith(promoCode: normalized, promoDiscount: kMockPromoDiscount);
-    return true;
-  }
-
-  void clearPromo() {
-    state = state.copyWith(clearPromo: true);
   }
 
   /// Data terbaru dari server tidak bawa state pilih (`selected`) checkout —

@@ -27,7 +27,10 @@ public record ProductListItemDto(
     string CategoryName,
     Guid StoreId,
     string StoreName,
-    string StoreSlug);
+    string StoreSlug,
+    // Harga asli sebelum diskon — cuma keisi kalau produk sedang diskon (buat harga coret di UI).
+    // `Price` di atas selalu harga efektif (sudah didiskon kalau berlaku).
+    decimal? OriginalPrice = null);
 
 public record ProductDetailDto(
     Guid Id,
@@ -44,7 +47,8 @@ public record ProductDetailDto(
     DateTime CreatedAt,
     Guid StoreId,
     string StoreName,
-    string StoreSlug);
+    string StoreSlug,
+    decimal? OriginalPrice = null);
 
 public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 

@@ -24,6 +24,7 @@ public record SellerSubOrderDetailDto(
     IReadOnlyList<OrderItemDto> Items,
     decimal Subtotal,
     decimal ShippingCost,
+    decimal VoucherDiscount,
     decimal CommissionAmount,
     decimal SellerEarning,
     decimal TotalAmount,

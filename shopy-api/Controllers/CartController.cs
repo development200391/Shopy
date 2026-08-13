@@ -156,13 +156,15 @@ public class CartController(ShopyDbContext dbContext) : ControllerBase
     {
         var items = await dbContext.CartItems
             .Where(ci => ci.CartId == cartId)
-            .Include(ci => ci.Product)
+            .Include(ci => ci.Product).ThenInclude(p => p.Store)
             .OrderBy(ci => ci.CreatedAt)
-            .Select(ci => new CartItemDto(
-                ci.Id, ci.ProductId, ci.Product.Name, ci.Product.Slug, ci.Product.ImageUrl,
-                ci.Product.Price, ci.Quantity, ci.Product.Stock, ci.Product.StoreId, ci.Product.Store.Name))
             .ToListAsync();
 
-        return new CartDto(cartId, items);
+        var dtoItems = items.Select(ci => new CartItemDto(
+            ci.Id, ci.ProductId, ci.Product.Name, ci.Product.Slug, ci.Product.ImageUrl,
+            PricingHelper.EffectivePrice(ci.Product), ci.Quantity, ci.Product.Stock, ci.Product.StoreId, ci.Product.Store.Name,
+            PricingHelper.IsDiscounted(ci.Product) ? ci.Product.Price : null)).ToList();
+
+        return new CartDto(cartId, dtoItems);
     }
 }

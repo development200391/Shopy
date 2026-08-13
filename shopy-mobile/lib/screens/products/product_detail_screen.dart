@@ -99,6 +99,15 @@ class _ProductDetailBody extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
+                      if (product.isDiscounted)
+                        Text(
+                          formatRupiah(product.originalPrice!),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
                       Text(
                         formatRupiah(product.price),
                         style: const TextStyle(

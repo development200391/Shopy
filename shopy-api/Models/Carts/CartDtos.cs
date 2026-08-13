@@ -10,7 +10,8 @@ public record CartItemDto(
     int Quantity,
     int Stock,
     Guid StoreId,
-    string StoreName);
+    string StoreName,
+    decimal? OriginalPrice = null);
 
 public record CartDto(Guid Id, IReadOnlyList<CartItemDto> Items);
 

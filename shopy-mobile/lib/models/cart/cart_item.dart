@@ -9,6 +9,7 @@ class CartItem {
   final bool selected;
   final String storeId;
   final String storeName;
+  final int? originalPrice;
 
   const CartItem({
     required this.id,
@@ -20,9 +21,12 @@ class CartItem {
     this.selected = true,
     required this.storeId,
     required this.storeName,
+    this.originalPrice,
   });
 
   int get subtotal => price * qty;
+
+  bool get isDiscounted => originalPrice != null;
 
   /// Parse dari `CartItemDto` backend (`GET/POST/PUT/DELETE /api/cart...`).
   /// Backend belum punya konsep varian produk, jadi selalu kosong. `selected`
@@ -38,6 +42,7 @@ class CartItem {
       qty: json['quantity'] as int,
       storeId: json['storeId'] as String,
       storeName: json['storeName'] as String,
+      originalPrice: (json['originalPrice'] as num?)?.round(),
     );
   }
 
@@ -52,6 +57,7 @@ class CartItem {
       selected: selected ?? this.selected,
       storeId: storeId,
       storeName: storeName,
+      originalPrice: originalPrice,
     );
   }
 }
