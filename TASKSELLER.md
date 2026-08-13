@@ -227,20 +227,37 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 
 ## Fase 5 — Keuangan & Pencairan
 
-- [ ] Backend: pembentukan saldo otomatis — saat sub-order `Completed`: catat `BalanceTransactions` `SaleIncome` (+) dan `Commission` (−), pindahkan dari `PendingBalance` ke `AvailableBalance`
-- [ ] Backend: escrow — dana masuk `PendingBalance` saat pembayaran `Settled` (hook di `PaymentsController`/webhook Midtrans yang sudah ada), baru cair setelah pesanan selesai
-- [ ] Backend: `GET /api/seller/balance` (saldo tersedia, tertahan, total penghasilan), `GET /api/seller/balance/transactions?type=&page=` (mutasi)
-- [ ] Backend: `POST /api/seller/withdrawals` (validasi minimal, saldo cukup, rekening terverifikasi, batas per hari), `GET /api/seller/withdrawals`
-- [ ] Backend: `GET /api/seller/reports/earnings?from=&to=` + ekspor CSV ("Unduh Laporan")
-- [ ] Flutter: halaman **Keuangan** (kartu saldo, ringkasan penghasilan/komisi/pesanan selesai, filter mutasi, daftar mutasi saldo)
+- [x] Backend: pembentukan saldo otomatis — saat sub-order `Completed`: catat `BalanceTransactions` `SaleIncome` (+) dan `Commission` (−), pindahkan dari `PendingBalance` ke `AvailableBalance`
+
+  - `Services/StoreBalanceService.cs` (baru, `IStoreBalanceService`) — `SettleAsync(SubOrder)` dipanggil dari 2 titik: buyer `PATCH sub-orders/{id}/status` (`Completed`) di `SubOrdersController`, dan auto-complete `Shipped→Completed` di `SubOrderAutoTransitionService`. Mencatat 2 baris `BalanceTransaction` berurutan dengan `BalanceAfter` snapshot masing-masing: `SaleIncome` (+`Subtotal+ShippingCost`, gross) lalu `Commission` (−`CommissionAmount`) — totalnya pas `SellerEarning`. `StoreBalance.TotalEarning` juga ikut bertambah (penghasilan lifetime).
+- [x] Backend: escrow — dana masuk `PendingBalance` saat pembayaran `Settled` (hook di `PaymentsController`/webhook Midtrans yang sudah ada), baru cair setelah pesanan selesai
+
+  - `PaymentsController.ApplyStatusAsync` — `StoreBalanceService.AddPendingAsync(SubOrder)` dipanggil tepat setelah `SubOrder.Status` maju `WaitingPayment→NewOrder`. `PendingBalance` **bukan bagian ledger** (tidak ada baris `BalanceTransaction` untuk ini) — cuma penanda "dana ditahan dari pesanan berjalan", sesuai mockup Keuangan yang cuma menampilkan 1 angka tanpa rincian mutasi.
+  - 🐛 **Celah yang diperbaiki**: kalau sub-order yang sudah `Settled` (jadi sudah nambah `PendingBalance`) ternyata dibatalkan (`buyer cancel` dari `NewOrder`) atau ditolak seller (`Reject`, cuma valid dari `NewOrder`) atau auto-reject (`SubOrderAutoTransitionService`), dana yang tertahan itu harus dilepas balik — kalau tidak, `PendingBalance` nyangkut selamanya. Ditangani `StoreBalanceService.ReleasePendingAsync(SubOrder)`, dipanggil dari ketiga titik itu.
+- [x] Backend: `GET /api/seller/balance` (saldo tersedia, tertahan, total penghasilan), `GET /api/seller/balance/transactions?type=&page=` (mutasi)
+
+  - `Controllers/SellerFinanceController.cs` (baru, `api/seller/finance`) + `Models/Sellers/SellerFinanceDtos.cs`. `GetBalance` juga menghitung `MonthlyEarning`/`MonthlyCommission`/`CompletedOrderCountThisMonth` on-the-fly dari `BalanceTransaction`/`SubOrder` bulan berjalan (bukan kolom tersimpan). `type` di endpoint transaksi: `income` (`SaleIncome`, tab "Pemasukan") / `withdrawal` (`Withdrawal`+`WithdrawalFee`, tab "Pencairan") / kosong (semua, termasuk baris `Commission` yang cuma muncul di tab ini). ⚠️ **Indikator tren "↑12%"/"↓12%" di mockup tidak diimplementasikan** — murni dekoratif, butuh hitung ulang periode sebelumnya, tidak ada di deskripsi fungsional checklist.
+- [x] Backend: `POST /api/seller/withdrawals` (validasi minimal, saldo cukup, rekening terverifikasi, batas per hari), `GET /api/seller/withdrawals`
+
+  - Validasi: rekening milik toko sendiri & `IsVerified`, `Amount >= Platform:MinWithdrawal` (Rp50.000), `Amount <= AvailableBalance`, jumlah pencairan toko ini **hari ini** `< Platform:MaxWithdrawalsPerDay` (baru, default 3, sesuai "maksimal 3x pencairan per hari" di mockup). Berhasil → `AvailableBalance -= Amount`, `Withdrawal` baru `Status=Pending`, 2 baris ledger `Withdrawal` (−`NetAmount`) + `WithdrawalFee` (−`AdminFee`, dari `Platform:WithdrawalAdminFee` Rp2.500) — memanfaatkan enum `WithdrawalFee` yang sejak Fase 0 belum pernah dipakai.
+  - ⚠️ **`BankAccount.IsVerified` di-auto-`true` saat dibuat** (`SellerBankAccountsController.CreateBankAccount`, sebelumnya selalu `false`) — deviasi sadar, tidak ada alur verifikasi admin sampai Fase 9, kalau tetap `false` fitur pencairan tidak akan pernah bisa dites/dipakai. Validasi `IsVerified` di endpoint withdrawal tetap dipertahankan (bukan dihapus).
+  - **Tidak ada disbursement beneran** — `Withdrawal` tetap `Status=Pending` selamanya di fase ini, diproses manual admin di Fase 9 (lihat catatan asli di bawah, tetap berlaku).
+- [x] Backend: `GET /api/seller/reports/earnings?from=&to=` + ekspor CSV ("Unduh Laporan")
+
+  - `SellerFinanceController.GetEarningsReport` — return file CSV langsung (`Tanggal,Tipe,Deskripsi,Jumlah,Saldo Setelah`), filter tanggal opsional. 🐛 **Bug ditemukan & diperbaiki saat verifikasi**: angka desimal awalnya di-render pakai koma sebagai pemisah desimal (locale server, bukan `en-US`) — misal `215000,00` — yang bentrok dengan koma pemisah kolom CSV dan merusak strukturnya. Diperbaiki dengan `.ToString(CultureInfo.InvariantCulture)` eksplisit untuk kolom `Jumlah`/`Saldo Setelah`.
+  - Di sisi `shopy-seller`, tombol **"Unduh Laporan" tetap snackbar placeholder** ("belum tersedia") — tidak ada `url_launcher`/file-download package terpasang, konsisten dengan tombol placeholder lain (Scan/Chat) dan menghindari nambah dependency baru di luar scope fase ini.
+- [x] Flutter: halaman **Keuangan** (kartu saldo, ringkasan penghasilan/komisi/pesanan selesai, filter mutasi, daftar mutasi saldo)
 
   ![Mockup Keuangan - Bold & Colorful](./shopy-seller/design/assets/keuangan-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman **Pencairan Dana** (jumlah + cairkan semua, rekening tujuan, rincian biaya admin, info estimasi, riwayat pencairan)
+  - `shopy-seller/lib/screens/finance/finance_screen.dart` — kartu saldo oranye + tombol "Cairkan Dana", 3 kartu stat (tanpa indikator tren, lihat catatan di atas), filter chip Semua/Pemasukan/Pencairan, list mutasi (panah hijau turun = pemasukan, panah merah naik = pengeluaran, warna diambil dari tanda `amount`).
+- [x] Flutter: halaman **Pencairan Dana** (jumlah + cairkan semua, rekening tujuan, rincian biaya admin, info estimasi, riwayat pencairan)
 
   ![Mockup Pencairan Dana - Bold & Colorful](./shopy-seller/design/assets/pencairan-seller-bold-colorful.png)
 
+  - `shopy-seller/lib/screens/finance/withdrawal_screen.dart` — reuse `bankAccountsProvider` (Fase 2) buat pilih rekening tujuan (bottom sheet "Ubah" kalau rekening >1), rincian biaya admin dihitung real-time client-side dari konstanta `kWithdrawalAdminFee` (cerminan `Platform:WithdrawalAdminFee`, sama pola dengan `kMockShippingCost`/tabel kurir Fase 4 — backend tetap sumber kebenaran akhir saat submit), riwayat pencairan dengan badge status (`Pending`/`Processing`→kuning, `Completed`→hijau "Berhasil", `Rejected`→merah). Menu "Keuangan & Pencairan" di `store_profile_screen.dart` (`_MenuCard`) sekarang diarahkan ke `FinanceScreen` (sebelumnya `onNotAvailable`).
 - ⚠️ Pencairan **beneran** ke rekening butuh layanan disbursement (Midtrans Iris / Xendit Disbursement) yang berbeda dari Core API pembayaran yang sudah dipakai. Untuk sekarang cukup sampai status `Pending`/`Processing` yang diproses manual oleh admin (Fase 9), sama polanya seperti `Midtrans:ServerKey` yang masih kosong di TASKS.md Fase 5.
+- ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error/warning. Alur penuh diuji lewat `curl` (seller+buyer baru): checkout → simulasi settle → `GET balance` (`pendingBalance` sesuai `SellerEarning`) → accept→ship→buyer `Completed` → `GET balance` (`availableBalance` naik, `pendingBalance` balik 0, `totalEarning`/`monthlyEarning`/`monthlyCommission`/`completedOrderCountThisMonth` benar) → `GET transactions` 2 baris `SaleIncome`+`Commission` dengan `BalanceAfter` benar → withdrawal di bawah minimal (400) → withdrawal wajar (sukses, `availableBalance` berkurang persis, 2 baris ledger `Withdrawal`+`WithdrawalFee`) → withdrawal melebihi saldo (400) → skenario kedua: settle sub-order lain lalu seller `reject` sebelum `Completed` → `pendingBalance` balik ke 0 tanpa mengganggu `availableBalance` (verifikasi `ReleasePendingAsync`) → `GET reports/earnings` CSV valid (setelah fix locale). Regresi: `GET /api/products` normal. `flutter analyze` + `flutter test` bersih di `shopy-seller`. Verifikasi visual manual belum dilakukan (sama seperti fase-fase sebelumnya).
 
 ## Fase 6 — Promo & Voucher Toko
 

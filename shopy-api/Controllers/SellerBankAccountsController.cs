@@ -56,7 +56,10 @@ public class SellerBankAccountsController(ShopyDbContext dbContext) : Controller
             BankName = request.BankName,
             AccountNumber = request.AccountNumber,
             AccountHolderName = request.AccountHolderName,
-            IsVerified = false,
+            // Auto-verified untuk sekarang — belum ada alur verifikasi admin (Fase 9), lihat
+            // TASKSELLER.md Fase 5. Field ini tetap divalidasi saat pencairan dana supaya tetap
+            // bermakna begitu Fase 9 menambah jalur unverify.
+            IsVerified = true,
             IsDefault = makeDefault,
         };
         dbContext.BankAccounts.Add(account);

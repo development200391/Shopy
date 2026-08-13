@@ -34,6 +34,7 @@ public class SubOrderAutoTransitionService(IServiceScopeFactory scopeFactory, IC
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ShopyDbContext>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var balanceService = scope.ServiceProvider.GetRequiredService<IStoreBalanceService>();
 
         var now = DateTime.UtcNow;
         var autoCompleteDays = configuration.GetValue("Platform:AutoCompleteDays", 3);
@@ -92,6 +93,18 @@ public class SubOrderAutoTransitionService(IServiceScopeFactory scopeFactory, IC
         }
 
         await dbContext.SaveChangesAsync(stoppingToken);
+
+        // Sub-order yang expired ini pasti sudah pernah Settled (auto-reject dari NewOrder,
+        // auto-complete dari Shipped) — jadi selalu ada dana tertahan yang perlu diproses.
+        foreach (var subOrder in expiredNew)
+        {
+            await balanceService.ReleasePendingAsync(subOrder);
+        }
+        foreach (var subOrder in expiredShipped)
+        {
+            await balanceService.SettleAsync(subOrder);
+        }
+
         foreach (var subOrder in changed)
         {
             await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);

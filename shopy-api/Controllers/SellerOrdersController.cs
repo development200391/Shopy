@@ -13,7 +13,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize(Roles = "Seller")]
 [Route("api/seller/orders")]
-public class SellerOrdersController(ShopyDbContext dbContext, INotificationService notificationService) : ControllerBase
+public class SellerOrdersController(
+    ShopyDbContext dbContext, INotificationService notificationService, IStoreBalanceService balanceService) : ControllerBase
 {
     private static readonly Dictionary<string, SubOrderStatus> StatusByTab = new()
     {
@@ -128,6 +129,9 @@ public class SellerOrdersController(ShopyDbContext dbContext, INotificationServi
         subOrder.UpdatedAt = now;
         subOrder.AutoCancelAt = null;
         await TransitionAsync(subOrder, request.Reason, now);
+        // Sub-order ini sudah pernah Settled (cuma bisa reject dari NewOrder), jadi ada dana
+        // tertahan yang perlu dilepas balik.
+        await balanceService.ReleasePendingAsync(subOrder);
 
         return await GetOrder(id);
     }

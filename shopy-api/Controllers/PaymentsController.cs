@@ -13,7 +13,11 @@ namespace shopy_api.Controllers;
 [Authorize]
 [Route("api/orders/{orderId:guid}/payments")]
 public class PaymentsController(
-    ShopyDbContext dbContext, IMidtransService midtransService, INotificationService notificationService, IConfiguration configuration) : ControllerBase
+    ShopyDbContext dbContext,
+    IMidtransService midtransService,
+    INotificationService notificationService,
+    IStoreBalanceService balanceService,
+    IConfiguration configuration) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<PaymentDto>> CreatePayment(Guid orderId, CreatePaymentRequest request)
@@ -204,12 +208,12 @@ public class PaymentsController(
     }
 
     /// <returns>Sub-order yang statusnya ikut berubah (perlu dikirim notifikasi per item).</returns>
-    private Task<List<SubOrder>> ApplyStatusAsync(Payment payment, Order order, string transactionStatus, string? fraudStatus)
+    private async Task<List<SubOrder>> ApplyStatusAsync(Payment payment, Order order, string transactionStatus, string? fraudStatus)
     {
         var newStatus = MapStatus(transactionStatus, fraudStatus);
         if (payment.Status == newStatus)
         {
-            return Task.FromResult(new List<SubOrder>());
+            return [];
         }
 
         payment.Status = newStatus;
@@ -235,6 +239,8 @@ public class PaymentsController(
                     ChangedAt = now,
                 });
                 changed.Add(subOrder);
+                // Dana ditahan (PendingBalance) sejak sekarang, baru cair penuh saat sub-order Completed.
+                await balanceService.AddPendingAsync(subOrder);
             }
 
             if (changed.Count > 0)
@@ -244,7 +250,7 @@ public class PaymentsController(
             }
         }
 
-        return Task.FromResult(changed);
+        return changed;
     }
 
     private static PaymentStatus MapStatus(string transactionStatus, string? fraudStatus) => transactionStatus switch

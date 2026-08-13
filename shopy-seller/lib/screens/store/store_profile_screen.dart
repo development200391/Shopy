@@ -11,6 +11,7 @@ import '../../services/seller_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
+import '../finance/finance_screen.dart';
 import '../order/order_list_screen.dart';
 import '../product/product_list_screen.dart';
 import 'bank_accounts_screen.dart';
@@ -129,6 +130,8 @@ class _StoreProfileBody extends ConsumerWidget {
                     onBankAccounts: () => Navigator.of(
                       context,
                     ).push(MaterialPageRoute(builder: (_) => const BankAccountsScreen())),
+                    onFinance: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
                     onNotAvailable: () => _notAvailableYet(context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -408,12 +411,14 @@ class _MenuCard extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onAddresses;
   final VoidCallback onBankAccounts;
+  final VoidCallback onFinance;
   final VoidCallback onNotAvailable;
 
   const _MenuCard({
     required this.onEditProfile,
     required this.onAddresses,
     required this.onBankAccounts,
+    required this.onFinance,
     required this.onNotAvailable,
   });
 
@@ -423,7 +428,7 @@ class _MenuCard extends StatelessWidget {
       (Icons.storefront_outlined, 'Edit Profil Toko', 'Nama, logo, deskripsi', onEditProfile),
       (Icons.location_on_outlined, 'Alamat & Pengiriman', 'Alamat pickup, kurir aktif', onAddresses),
       (Icons.account_balance_outlined, 'Rekening Bank', 'Buat pencairan dana', onBankAccounts),
-      (Icons.payments_outlined, 'Keuangan & Pencairan', 'Saldo & riwayat pencairan', onNotAvailable),
+      (Icons.payments_outlined, 'Keuangan & Pencairan', 'Saldo & riwayat pencairan', onFinance),
       (Icons.show_chart, 'Statistik Penjualan', 'Omzet, produk terlaris', onNotAvailable),
       (Icons.local_offer_outlined, 'Promo & Voucher', 'Kelola promo toko', onNotAvailable),
       (Icons.star_outline, 'Ulasan Produk', 'Balas ulasan pembeli', onNotAvailable),

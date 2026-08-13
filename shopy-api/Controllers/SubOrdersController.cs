@@ -16,7 +16,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/orders/sub-orders")]
-public class SubOrdersController(ShopyDbContext dbContext, INotificationService notificationService) : ControllerBase
+public class SubOrdersController(
+    ShopyDbContext dbContext, INotificationService notificationService, IStoreBalanceService balanceService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<SubOrderSummaryDto>>> GetSubOrders(
@@ -108,6 +109,16 @@ public class SubOrdersController(ShopyDbContext dbContext, INotificationService 
         subOrder.Order.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync();
+
+        if (request.Status == SubOrderStatus.Completed)
+        {
+            await balanceService.SettleAsync(subOrder);
+        }
+        else if (request.Status == SubOrderStatus.Cancelled)
+        {
+            await balanceService.ReleasePendingAsync(subOrder);
+        }
+
         await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
 
         return Ok(ToDetailDto(subOrder));
