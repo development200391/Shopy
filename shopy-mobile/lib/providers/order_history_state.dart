@@ -1,9 +1,9 @@
-import '../models/order/order_status.dart';
-import '../models/order/order_summary.dart';
+import '../models/order/sub_order_status.dart';
+import '../models/order/sub_order_summary.dart';
 
 class OrderHistoryState {
-  final OrderStatus? statusFilter;
-  final List<OrderSummary> items;
+  final SubOrderStatus? statusFilter;
+  final List<SubOrderSummary> items;
   final int page;
   final int totalCount;
   final bool hasMore;
@@ -21,9 +21,9 @@ class OrderHistoryState {
   });
 
   OrderHistoryState copyWith({
-    OrderStatus? statusFilter,
+    SubOrderStatus? statusFilter,
     bool clearStatusFilter = false,
-    List<OrderSummary>? items,
+    List<SubOrderSummary>? items,
     int? page,
     int? totalCount,
     bool? hasMore,

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/order/order_detail.dart';
-import '../models/order/order_status.dart';
+import '../models/order/sub_order_detail.dart';
+import '../models/order/sub_order_status.dart';
 import '../services/order_api_service.dart';
 import 'auth_provider.dart';
 import 'order_history_state.dart';
@@ -14,8 +14,8 @@ final orderApiServiceProvider = Provider<OrderApiService>((ref) {
 /// Detail Pesanan sudah punya tombol "Coba lagi" manual sendiri.
 Duration? _noRetry(int retryCount, Object error) => null;
 
-final orderDetailProvider = FutureProvider.family<OrderDetail, String>((ref, id) {
-  return ref.watch(orderApiServiceProvider).getOrderDetail(id);
+final subOrderDetailProvider = FutureProvider.family<SubOrderDetail, String>((ref, id) {
+  return ref.watch(orderApiServiceProvider).getSubOrderDetail(id);
 }, retry: _noRetry);
 
 final orderHistoryProvider = NotifierProvider<OrderHistoryNotifier, OrderHistoryState>(
@@ -33,7 +33,7 @@ class OrderHistoryNotifier extends Notifier<OrderHistoryState> {
 
   OrderApiService get _api => ref.read(orderApiServiceProvider);
 
-  Future<void> setStatusFilter(OrderStatus? status) {
+  Future<void> setStatusFilter(SubOrderStatus? status) {
     state = status == null
         ? state.copyWith(clearStatusFilter: true)
         : state.copyWith(statusFilter: status);
@@ -52,7 +52,7 @@ class OrderHistoryNotifier extends Notifier<OrderHistoryState> {
     state = state.copyWith(loading: true, clearError: true);
 
     try {
-      final result = await _api.getOrders(status: state.statusFilter, page: nextPage, pageSize: _pageSize);
+      final result = await _api.getSubOrders(status: state.statusFilter, page: nextPage, pageSize: _pageSize);
       state = state.copyWith(
         items: resetItems ? result.items : [...state.items, ...result.items],
         page: result.page,

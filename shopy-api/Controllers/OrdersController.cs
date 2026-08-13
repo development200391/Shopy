@@ -12,12 +12,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/orders")]
-public class OrdersController(ShopyDbContext dbContext, INotificationService notificationService) : ControllerBase
+public class OrdersController(ShopyDbContext dbContext, IConfiguration configuration) : ControllerBase
 {
-    // Ongkir flat, sama seperti simulasi di Flutter (`kMockShippingCost`) — belum ada
-    // integrasi kurir asli.
-    private const decimal FlatShippingCost = 15000m;
-
     [HttpGet]
     public async Task<ActionResult<PagedResult<OrderSummaryDto>>> GetOrders(
         [FromQuery] OrderStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -53,15 +49,15 @@ public class OrdersController(ShopyDbContext dbContext, INotificationService not
     {
         var userId = User.GetUserId();
         var order = await dbContext.Orders
-            .Include(o => o.OrderItems)
+            .Include(o => o.SubOrders).ThenInclude(so => so.Store)
+            .Include(o => o.SubOrders).ThenInclude(so => so.OrderItems).ThenInclude(oi => oi.Product)
             .SingleOrDefaultAsync(o => o.Id == id && o.UserId == userId);
         if (order is null)
         {
             return NotFound(new { message = "Pesanan tidak ditemukan." });
         }
 
-        var history = await GetHistoryAsync(order.Id);
-        return Ok(ToDetailDto(order, history));
+        return Ok(ToDetailDto(order));
     }
 
     [HttpPost]
@@ -101,18 +97,18 @@ public class OrdersController(ShopyDbContext dbContext, INotificationService not
             }
         }
 
-        var subtotal = cartItems.Sum(ci => ci.Product.Price * ci.Quantity);
+        var commissionPercent = configuration.GetValue("Platform:CommissionPercent", 2m);
+        var courier = Couriers.Default;
         var now = DateTime.UtcNow;
+        var orderNumber = await GenerateOrderNumberAsync();
 
         var order = new Order
         {
             Id = Guid.NewGuid(),
-            OrderNumber = await GenerateOrderNumberAsync(),
+            OrderNumber = orderNumber,
             UserId = userId,
             AddressId = address.Id,
             Status = OrderStatus.Pending,
-            ShippingCost = FlatShippingCost,
-            TotalAmount = subtotal + FlatShippingCost,
             Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note,
             RecipientName = address.RecipientName,
             PhoneNumber = address.PhoneNumber,
@@ -124,81 +120,75 @@ public class OrdersController(ShopyDbContext dbContext, INotificationService not
             UpdatedAt = now,
         };
 
-        foreach (var item in cartItems)
+        var storeGroups = cartItems.GroupBy(ci => ci.Product.StoreId).ToList();
+        var seq = 0;
+        foreach (var group in storeGroups)
         {
-            order.OrderItems.Add(new OrderItem
+            seq++;
+            var subtotal = group.Sum(ci => ci.Product.Price * ci.Quantity);
+            var commissionAmount = Math.Round(subtotal * commissionPercent / 100m, 2);
+
+            var subOrder = new SubOrder
             {
                 Id = Guid.NewGuid(),
                 OrderId = order.Id,
-                ProductId = item.ProductId,
-                ProductNameSnapshot = item.Product.Name,
-                UnitPrice = item.Product.Price,
-                Quantity = item.Quantity,
-                Subtotal = item.Product.Price * item.Quantity,
+                StoreId = group.Key,
+                SubOrderNumber = $"{orderNumber}-{seq}",
+                Status = SubOrderStatus.WaitingPayment,
+                Subtotal = subtotal,
+                ShippingCost = courier.Price,
+                CommissionAmount = commissionAmount,
+                SellerEarning = subtotal + courier.Price - commissionAmount,
+                CreatedAt = now,
+                UpdatedAt = now,
+            };
+            subOrder.StatusHistories.Add(new SubOrderStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                SubOrderId = subOrder.Id,
+                Status = SubOrderStatus.WaitingPayment,
+                ChangedAt = now,
             });
+
+            foreach (var item in group)
+            {
+                order.OrderItems.Add(new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    ProductId = item.ProductId,
+                    SubOrderId = subOrder.Id,
+                    ProductNameSnapshot = item.Product.Name,
+                    UnitPrice = item.Product.Price,
+                    Quantity = item.Quantity,
+                    Subtotal = item.Product.Price * item.Quantity,
+                });
+            }
+
+            order.SubOrders.Add(subOrder);
+        }
+
+        order.ShippingCost = order.SubOrders.Sum(so => so.ShippingCost);
+        order.TotalAmount = order.SubOrders.Sum(so => so.Subtotal + so.ShippingCost);
+
+        foreach (var item in cartItems)
+        {
             item.IsDeleted = true;
             item.UpdatedAt = now;
         }
+
         dbContext.Orders.Add(order);
-
-        var statusHistory = new OrderStatusHistory
-        {
-            Id = Guid.NewGuid(),
-            OrderId = order.Id,
-            Status = OrderStatus.Pending,
-            ChangedAt = now,
-        };
-        dbContext.OrderStatusHistories.Add(statusHistory);
-
         cart!.UpdatedAt = now;
         await dbContext.SaveChangesAsync();
 
-        return Ok(ToDetailDto(order, [new OrderStatusHistoryDto(OrderStatus.Pending.ToString(), now)]));
-    }
-
-    [HttpPatch("{id:guid}/status")]
-    public async Task<ActionResult<OrderDetailDto>> UpdateStatus(Guid id, UpdateOrderStatusRequest request)
-    {
-        // Catatan: belum ada role seller/admin terpisah di app ini, jadi endpoint ini
-        // cuma bisa dipakai user buat pesanan miliknya sendiri (bukan buat "role" lain
-        // yang mengelola status beneran) — lihat TASKS.md Fase 4 buat detail.
-        var userId = User.GetUserId();
-        var order = await dbContext.Orders
-            .Include(o => o.OrderItems)
-            .SingleOrDefaultAsync(o => o.Id == id && o.UserId == userId);
-        if (order is null)
+        var storeIds = order.SubOrders.Select(so => so.StoreId).ToList();
+        var stores = await dbContext.Stores.Where(s => storeIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id);
+        foreach (var subOrder in order.SubOrders)
         {
-            return NotFound(new { message = "Pesanan tidak ditemukan." });
+            subOrder.Store = stores[subOrder.StoreId];
         }
 
-        if (order.Status == request.Status)
-        {
-            return BadRequest(new { message = "Pesanan sudah dalam status ini." });
-        }
-
-        order.Status = request.Status;
-        order.UpdatedAt = DateTime.UtcNow;
-        dbContext.OrderStatusHistories.Add(new OrderStatusHistory
-        {
-            Id = Guid.NewGuid(),
-            OrderId = order.Id,
-            Status = request.Status,
-            ChangedAt = order.UpdatedAt,
-        });
-        await dbContext.SaveChangesAsync();
-        await notificationService.NotifyOrderStatusChangedAsync(order);
-
-        var history = await GetHistoryAsync(order.Id);
-        return Ok(ToDetailDto(order, history));
-    }
-
-    private async Task<List<OrderStatusHistoryDto>> GetHistoryAsync(Guid orderId)
-    {
-        return await dbContext.OrderStatusHistories
-            .Where(h => h.OrderId == orderId)
-            .OrderBy(h => h.ChangedAt)
-            .Select(h => new OrderStatusHistoryDto(h.Status.ToString(), h.ChangedAt))
-            .ToListAsync();
+        return Ok(ToDetailDto(order));
     }
 
     private async Task<string> GenerateOrderNumberAsync()
@@ -216,13 +206,10 @@ public class OrdersController(ShopyDbContext dbContext, INotificationService not
         return $"SHP-{datePart}-{Guid.NewGuid().ToString("N")[..4].ToUpperInvariant()}";
     }
 
-    private static OrderDetailDto ToDetailDto(Order order, IReadOnlyList<OrderStatusHistoryDto> history) => new(
-        order.Id, order.OrderNumber, order.Status.ToString(),
-        order.TotalAmount - order.ShippingCost, order.ShippingCost, order.TotalAmount, order.Note,
+    private static OrderDetailDto ToDetailDto(Order order) => new(
+        order.Id, order.OrderNumber, order.Status.ToString(), order.TotalAmount, order.Note,
         new OrderAddressSnapshotDto(
             order.RecipientName, order.PhoneNumber, order.FullAddress, order.City, order.Province, order.PostalCode),
-        order.OrderItems
-            .Select(oi => new OrderItemDto(oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal))
-            .ToList(),
-        history, order.CreatedAt, order.UpdatedAt);
+        order.SubOrders.Select(SubOrdersController.ToSummaryDto).ToList(),
+        order.CreatedAt);
 }

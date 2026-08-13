@@ -4,7 +4,7 @@ namespace shopy_api.Services;
 
 public interface INotificationService
 {
-    Task NotifyOrderStatusChangedAsync(Order order);
+    Task NotifySubOrderStatusChangedAsync(SubOrder subOrder, Store store);
 
     Task<int> BroadcastPromoAsync(string title, string body);
 }

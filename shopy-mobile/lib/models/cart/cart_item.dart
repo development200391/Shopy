@@ -7,6 +7,8 @@ class CartItem {
   final int price;
   final int qty;
   final bool selected;
+  final String storeId;
+  final String storeName;
 
   const CartItem({
     required this.id,
@@ -16,6 +18,8 @@ class CartItem {
     required this.price,
     this.qty = 1,
     this.selected = true,
+    required this.storeId,
+    required this.storeName,
   });
 
   int get subtotal => price * qty;
@@ -32,6 +36,8 @@ class CartItem {
       variant: '',
       price: (json['price'] as num).round(),
       qty: json['quantity'] as int,
+      storeId: json['storeId'] as String,
+      storeName: json['storeName'] as String,
     );
   }
 
@@ -44,6 +50,8 @@ class CartItem {
       price: price,
       qty: qty ?? this.qty,
       selected: selected ?? this.selected,
+      storeId: storeId,
+      storeName: storeName,
     );
   }
 }

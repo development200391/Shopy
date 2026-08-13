@@ -7,7 +7,7 @@ import '../../providers/notification_history_state.dart';
 import '../../providers/notification_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
-import '../orders/order_detail_screen.dart';
+import '../orders/order_history_screen.dart';
 
 /// Halaman Riwayat Notifikasi. Desain terpilih: **Bold & Colorful** (lihat
 /// `UI Design - Checkout, Payment, Notifikasi/11_riwayat_notifikasi_list.png`
@@ -86,11 +86,10 @@ class _NotificationBody extends ConsumerWidget {
                 notification: notification,
                 onTap: () {
                   ref.read(notificationHistoryProvider.notifier).markRead(notification.id);
-                  final orderId = notification.orderId;
-                  if (orderId != null) {
+                  if (notification.orderId != null) {
                     Navigator.of(
                       context,
-                    ).push(MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: orderId)));
+                    ).push(MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
                   }
                 },
               ),

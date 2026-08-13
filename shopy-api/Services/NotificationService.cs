@@ -6,37 +6,40 @@ namespace shopy_api.Services;
 
 public class NotificationService(ShopyDbContext dbContext, IPushNotificationService pushService) : INotificationService
 {
-    public async Task NotifyOrderStatusChangedAsync(Order order)
+    /// <remarks><paramref name="subOrder"/>.Order harus sudah di-<c>Include</c> oleh pemanggil.</remarks>
+    public async Task NotifySubOrderStatusChangedAsync(SubOrder subOrder, Store store)
     {
-        var statusLabel = order.Status switch
+        var statusLabel = subOrder.Status switch
         {
-            OrderStatus.Pending => "menunggu konfirmasi",
-            OrderStatus.Processing => "sedang diproses",
-            OrderStatus.Shipped => "sedang dikirim",
-            OrderStatus.Completed => "selesai",
-            OrderStatus.Cancelled => "dibatalkan",
-            _ => order.Status.ToString(),
+            SubOrderStatus.WaitingPayment => "menunggu pembayaran",
+            SubOrderStatus.NewOrder => "menunggu konfirmasi toko",
+            SubOrderStatus.Processing => "sedang diproses",
+            SubOrderStatus.Shipped => "sedang dikirim",
+            SubOrderStatus.Completed => "selesai",
+            SubOrderStatus.Cancelled => "dibatalkan",
+            SubOrderStatus.Rejected => "ditolak penjual",
+            _ => subOrder.Status.ToString(),
         };
 
         const string title = "Status Pesanan Diperbarui";
-        var body = $"Pesanan #{order.OrderNumber} {statusLabel}.";
+        var body = $"Pesanan #{subOrder.SubOrderNumber} dari {store.Name} {statusLabel}.";
 
         dbContext.Notifications.Add(new Notification
         {
             Id = Guid.NewGuid(),
-            UserId = order.UserId,
+            UserId = subOrder.Order.UserId,
             Type = NotificationType.OrderStatus,
             Title = title,
             Body = body,
-            OrderId = order.Id,
+            OrderId = subOrder.OrderId,
             CreatedAt = DateTime.UtcNow,
         });
         await dbContext.SaveChangesAsync();
 
-        var tokens = await dbContext.DeviceTokens.Where(t => t.UserId == order.UserId).Select(t => t.Token).ToListAsync();
+        var tokens = await dbContext.DeviceTokens.Where(t => t.UserId == subOrder.Order.UserId).Select(t => t.Token).ToListAsync();
         await pushService.SendAsync(
             tokens, title, body,
-            new Dictionary<string, string> { ["type"] = "order_status", ["orderId"] = order.Id.ToString() });
+            new Dictionary<string, string> { ["type"] = "order_status", ["orderId"] = subOrder.OrderId.ToString() });
     }
 
     public async Task<int> BroadcastPromoAsync(string title, string body)

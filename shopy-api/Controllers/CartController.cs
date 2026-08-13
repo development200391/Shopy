@@ -160,7 +160,7 @@ public class CartController(ShopyDbContext dbContext) : ControllerBase
             .OrderBy(ci => ci.CreatedAt)
             .Select(ci => new CartItemDto(
                 ci.Id, ci.ProductId, ci.Product.Name, ci.Product.Slug, ci.Product.ImageUrl,
-                ci.Product.Price, ci.Quantity, ci.Product.Stock))
+                ci.Product.Price, ci.Quantity, ci.Product.Stock, ci.Product.StoreId, ci.Product.Store.Name))
             .ToListAsync();
 
         return new CartDto(cartId, items);

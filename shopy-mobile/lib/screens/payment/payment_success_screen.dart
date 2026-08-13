@@ -6,7 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 import '../home/home_screen.dart';
-import '../orders/order_detail_screen.dart';
+import '../orders/order_history_screen.dart';
 
 /// Halaman konfirmasi pembayaran berhasil. Desain terpilih: **Bold &
 /// Colorful** (lihat
@@ -76,7 +76,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id)),
+                    MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
                   ),
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                   child: const Text('Lihat Pesanan'),

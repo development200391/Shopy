@@ -5,7 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 import '../home/home_screen.dart';
-import '../orders/order_detail_screen.dart';
+import '../orders/order_history_screen.dart';
 import '../payment/payment_method_screen.dart';
 
 /// Halaman konfirmasi setelah "Buat Pesanan" berhasil. Desain terpilih:
@@ -46,6 +46,11 @@ class CheckoutSuccessScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Nomor Pesanan #${order.orderNumber}',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${order.subOrders.length} toko diproses',
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -96,7 +101,7 @@ class CheckoutSuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id)),
+                    MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
                   ),
                   child: const Text('Lihat Pesanan'),
                 ),

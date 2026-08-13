@@ -27,6 +27,8 @@ public class SubOrder : ISoftDeletable
     public DateTime? CompletedAt { get; set; }
     public DateTime? AutoCancelAt { get; set; }
     public string? CancelReason { get; set; }
+    // Foto bukti serah terima ke kurir (opsional, diisi seller saat kirim).
+    public string? ProofPhotoUrl { get; set; }
 
     public ICollection<OrderItem> OrderItems { get; set; } = [];
     public ICollection<SubOrderStatusHistory> StatusHistories { get; set; } = [];

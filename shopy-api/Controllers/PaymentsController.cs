@@ -12,7 +12,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/orders/{orderId:guid}/payments")]
-public class PaymentsController(ShopyDbContext dbContext, IMidtransService midtransService, INotificationService notificationService) : ControllerBase
+public class PaymentsController(
+    ShopyDbContext dbContext, IMidtransService midtransService, INotificationService notificationService, IConfiguration configuration) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<PaymentDto>> CreatePayment(Guid orderId, CreatePaymentRequest request)
@@ -116,7 +117,9 @@ public class PaymentsController(ShopyDbContext dbContext, IMidtransService midtr
         }
 
         var userId = User.GetUserId();
-        var order = await dbContext.Orders.SingleOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+        var order = await dbContext.Orders
+            .Include(o => o.SubOrders).ThenInclude(so => so.Store)
+            .SingleOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
         if (order is null)
         {
             return NotFound(new { message = "Pesanan tidak ditemukan." });
@@ -138,11 +141,11 @@ public class PaymentsController(ShopyDbContext dbContext, IMidtransService midtr
             return Problem(ex.Message, statusCode: StatusCodes.Status502BadGateway);
         }
 
-        var orderStatusChanged = await ApplyStatusAsync(payment, order, status.TransactionStatus, status.FraudStatus);
+        var changedSubOrders = await ApplyStatusAsync(payment, order, status.TransactionStatus, status.FraudStatus);
         await dbContext.SaveChangesAsync();
-        if (orderStatusChanged)
+        foreach (var subOrder in changedSubOrders)
         {
-            await notificationService.NotifyOrderStatusChangedAsync(order);
+            await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
         }
 
         return Ok(ToDto(payment));
@@ -175,18 +178,18 @@ public class PaymentsController(ShopyDbContext dbContext, IMidtransService midtr
         }
 
         var payment = await dbContext.Payments
-            .Include(p => p.Order)
+            .Include(p => p.Order).ThenInclude(o => o.SubOrders).ThenInclude(so => so.Store)
             .SingleOrDefaultAsync(p => p.MidtransOrderId == orderIdParam);
         if (payment is null)
         {
             return NotFound();
         }
 
-        var orderStatusChanged = await ApplyStatusAsync(payment, payment.Order, transactionStatus, fraudStatus);
+        var changedSubOrders = await ApplyStatusAsync(payment, payment.Order, transactionStatus, fraudStatus);
         await dbContext.SaveChangesAsync();
-        if (orderStatusChanged)
+        foreach (var subOrder in changedSubOrders)
         {
-            await notificationService.NotifyOrderStatusChangedAsync(payment.Order);
+            await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
         }
 
         return Ok();
@@ -200,36 +203,48 @@ public class PaymentsController(ShopyDbContext dbContext, IMidtransService midtr
             .FirstOrDefaultAsync();
     }
 
-    /// <returns>True kalau <paramref name="order"/>.Status ikut berubah (perlu dikirim notifikasi).</returns>
-    private Task<bool> ApplyStatusAsync(Payment payment, Order order, string transactionStatus, string? fraudStatus)
+    /// <returns>Sub-order yang statusnya ikut berubah (perlu dikirim notifikasi per item).</returns>
+    private Task<List<SubOrder>> ApplyStatusAsync(Payment payment, Order order, string transactionStatus, string? fraudStatus)
     {
         var newStatus = MapStatus(transactionStatus, fraudStatus);
         if (payment.Status == newStatus)
         {
-            return Task.FromResult(false);
+            return Task.FromResult(new List<SubOrder>());
         }
 
         payment.Status = newStatus;
         payment.UpdatedAt = DateTime.UtcNow;
 
-        // Pembayaran sukses = pemicu asli order maju dari Pending -> Processing, karena
-        // app ini belum punya role seller/admin yang biasanya melakukan itu (lihat
-        // catatan di TASKS.md Fase 4).
-        if (newStatus == PaymentStatus.Settled && order.Status == OrderStatus.Pending)
+        var changed = new List<SubOrder>();
+        // Pembayaran sukses = tiap sub-order toko maju dari WaitingPayment -> NewOrder,
+        // lalu seller yang accept/reject dari sana (lihat SellerOrdersController).
+        if (newStatus == PaymentStatus.Settled)
         {
-            order.Status = OrderStatus.Processing;
-            order.UpdatedAt = DateTime.UtcNow;
-            dbContext.OrderStatusHistories.Add(new OrderStatusHistory
+            var now = DateTime.UtcNow;
+            var autoCancelHours = configuration.GetValue("Platform:AutoCancelHours", 24);
+            foreach (var subOrder in order.SubOrders.Where(so => so.Status == SubOrderStatus.WaitingPayment))
             {
-                Id = Guid.NewGuid(),
-                OrderId = order.Id,
-                Status = OrderStatus.Processing,
-                ChangedAt = order.UpdatedAt,
-            });
-            return Task.FromResult(true);
+                subOrder.Status = SubOrderStatus.NewOrder;
+                subOrder.UpdatedAt = now;
+                subOrder.AutoCancelAt = now.AddHours(autoCancelHours);
+                dbContext.SubOrderStatusHistories.Add(new SubOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    SubOrderId = subOrder.Id,
+                    Status = SubOrderStatus.NewOrder,
+                    ChangedAt = now,
+                });
+                changed.Add(subOrder);
+            }
+
+            if (changed.Count > 0)
+            {
+                order.Status = OrderStatusHelper.Recalculate(order.SubOrders.Select(so => so.Status));
+                order.UpdatedAt = now;
+            }
         }
 
-        return Task.FromResult(false);
+        return Task.FromResult(changed);
     }
 
     private static PaymentStatus MapStatus(string transactionStatus, string? fraudStatus) => transactionStatus switch

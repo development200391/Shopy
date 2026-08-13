@@ -2,8 +2,9 @@ import 'package:dio/dio.dart';
 
 import '../models/catalog/paged_result.dart';
 import '../models/order/order_detail.dart';
-import '../models/order/order_status.dart';
-import '../models/order/order_summary.dart';
+import '../models/order/sub_order_detail.dart';
+import '../models/order/sub_order_status.dart';
+import '../models/order/sub_order_summary.dart';
 import 'api_client.dart';
 import 'order_exception.dart';
 
@@ -12,22 +13,38 @@ class OrderApiService {
 
   OrderApiService(this._apiClient);
 
-  Future<PagedResult<OrderSummary>> getOrders({OrderStatus? status, int page = 1, int pageSize = 20}) async {
+  Future<PagedResult<SubOrderSummary>> getSubOrders({
+    SubOrderStatus? status,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/orders',
+        '/api/orders/sub-orders',
         queryParameters: {if (status != null) 'status': status.apiValue, 'page': page, 'pageSize': pageSize},
       );
-      return PagedResult.fromJson(response.data as Map<String, dynamic>, OrderSummary.fromJson);
+      return PagedResult.fromJson(response.data as Map<String, dynamic>, SubOrderSummary.fromJson);
     } on DioException catch (e) {
       throw OrderException(_extractMessage(e));
     }
   }
 
-  Future<OrderDetail> getOrderDetail(String id) async {
+  Future<SubOrderDetail> getSubOrderDetail(String id) async {
     try {
-      final response = await _apiClient.dio.get('/api/orders/$id');
-      return OrderDetail.fromJson(response.data as Map<String, dynamic>);
+      final response = await _apiClient.dio.get('/api/orders/sub-orders/$id');
+      return SubOrderDetail.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw OrderException(_extractMessage(e));
+    }
+  }
+
+  Future<SubOrderDetail> updateSubOrderStatus(String id, SubOrderStatus status) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        '/api/orders/sub-orders/$id/status',
+        data: {'status': status.apiValue},
+      );
+      return SubOrderDetail.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw OrderException(_extractMessage(e));
     }

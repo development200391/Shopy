@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/order/order_status.dart';
-import '../../models/order/order_summary.dart';
+import '../../models/order/sub_order_status.dart';
+import '../../models/order/sub_order_summary.dart';
 import '../../providers/order_history_state.dart';
 import '../../providers/order_provider.dart';
 import '../../theme/app_colors.dart';
@@ -17,12 +17,13 @@ import 'order_detail_screen.dart';
 
 const _tabs = [
   (label: 'Semua', status: null),
-  (label: 'Diproses', status: OrderStatus.processing),
-  (label: 'Dikirim', status: OrderStatus.shipped),
-  (label: 'Selesai', status: OrderStatus.completed),
+  (label: 'Diproses', status: SubOrderStatus.processing),
+  (label: 'Dikirim', status: SubOrderStatus.shipped),
+  (label: 'Selesai', status: SubOrderStatus.completed),
 ];
 
-/// Halaman Riwayat Transaksi. Desain terpilih: **Bold & Colorful** (lihat
+/// Halaman Riwayat Transaksi — 1 kartu per toko (`SubOrder`), sesuai
+/// TASKSELLER.md Fase 4. Desain terpilih: **Bold & Colorful** (lihat
 /// `UI Design - Checkout, Payment, Notifikasi/04_riwayat_transaksi_list.png`
 /// & `05_riwayat_transaksi_kosong.png`).
 class OrderHistoryScreen extends ConsumerWidget {
@@ -148,7 +149,7 @@ class _OrderHistoryBody extends ConsumerWidget {
           order: order,
           onTap: () => Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id))),
+          ).push(MaterialPageRoute(builder: (_) => OrderDetailScreen(subOrderId: order.id))),
         );
       },
     );
@@ -156,7 +157,7 @@ class _OrderHistoryBody extends ConsumerWidget {
 }
 
 class _OrderCard extends StatelessWidget {
-  final OrderSummary order;
+  final SubOrderSummary order;
   final VoidCallback onTap;
 
   const _OrderCard({required this.order, required this.onTap});
@@ -180,10 +181,18 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('#${order.orderNumber}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Row(
+                  children: [
+                    const Icon(Icons.storefront_outlined, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(order.storeName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                  ],
+                ),
                 _StatusBadge(status: order.status),
               ],
             ),
+            const SizedBox(height: 4),
+            Text('#${order.subOrderNumber}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
@@ -218,18 +227,20 @@ class _OrderCard extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  final OrderStatus status;
+  final SubOrderStatus status;
 
   const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     final color = switch (status) {
-      OrderStatus.pending => AppColors.warning,
-      OrderStatus.processing => AppColors.primary,
-      OrderStatus.shipped => Colors.blue,
-      OrderStatus.completed => AppColors.success,
-      OrderStatus.cancelled => AppColors.error,
+      SubOrderStatus.waitingPayment => AppColors.warning,
+      SubOrderStatus.newOrder => AppColors.warning,
+      SubOrderStatus.processing => AppColors.primary,
+      SubOrderStatus.shipped => Colors.blue,
+      SubOrderStatus.completed => AppColors.success,
+      SubOrderStatus.cancelled => AppColors.error,
+      SubOrderStatus.rejected => AppColors.error,
     };
 
     return Container(

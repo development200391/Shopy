@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/cart_provider.dart';
+import '../../providers/cart_state.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
@@ -132,7 +133,12 @@ class _CartBody extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          for (final item in cart.items) CartItemCard(item: item),
+          for (final group in cart.storeGroups) ...[
+            _StoreGroupHeader(group: group),
+            const SizedBox(height: AppSpacing.xs),
+            for (final item in group.items) CartItemCard(item: item),
+            const SizedBox(height: AppSpacing.xs),
+          ],
           const Divider(),
           const SizedBox(height: AppSpacing.sm),
           const PromoCodeSection(),
@@ -146,6 +152,37 @@ class _CartBody extends ConsumerWidget {
               valueColor: AppColors.primary,
             ),
           const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoreGroupHeader extends StatelessWidget {
+  final CartStoreGroup group;
+
+  const _StoreGroupHeader({required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          const Icon(Icons.storefront_outlined, size: 16, color: AppColors.textSecondary),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              group.storeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Text(
+            formatRupiah(group.subtotal),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
         ],
       ),
     );

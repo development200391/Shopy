@@ -48,6 +48,7 @@ builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 // Singleton karena FirebaseApp cuma boleh dibuat sekali per proses.
 builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
 builder.Services.AddHttpClient();
+builder.Services.AddHostedService<SubOrderAutoTransitionService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services

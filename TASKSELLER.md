@@ -170,31 +170,60 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
   - `screens/product/stock_price_screen.dart` — `TextEditingController` per baris, track produk yang "dirty" buat badge counter di tombol "Simpan Perubahan (N)", submit sekali lewat `PATCH /bulk`.
 - ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error. Alur penuh diuji lewat `curl` — buat toko → upload foto produk → buat produk (cek `Store.ProductCount` naik) → filter list per status → toggle aktif/nonaktif → bulk update harga+stok → low-stock → hapus (cek `Store.ProductCount` turun lagi & hilang dari endpoint publik). `GET /api/products` (endpoint lama) tetap 200 dengan produk toko lain tidak terganggu. `flutter analyze` + `flutter test` bersih di `shopy-seller`. Verifikasi visual manual belum dilakukan (sama seperti Fase 1-2).
 
-- [ ] Flutter: `productProvider` + `productFormProvider` (Riverpod) + `services/seller_product_api_service.dart`
+- [x] Flutter: `productProvider` + `productFormProvider` (Riverpod) + `services/seller_product_api_service.dart`
+
+  - Dikerjakan dengan nama beda dari yang dicatat di checklist ini, tapi fungsinya identik: `providers/seller_product_provider.dart` (`sellerProductsProvider`/`sellerProductDetailProvider`, bukan `productProvider`/`productFormProvider`) + `services/seller_product_api_service.dart` (sudah sesuai). Item ini kelewat dicentang saat Fase 3 selesai — dikerjakan bersamaan dengan item Daftar/Form Produk di atas.
 
 ## Fase 4 — Pesanan (SubOrder)
 
-- [ ] Backend: **refactor checkout** — `POST /api/orders` mengelompokkan cart item per `StoreId`, membuat 1 `Order` + N `SubOrder`, menghitung ongkir & komisi per toko
-- [ ] Backend: **kurangi stok** saat sub-order diterima penjual, dan kembalikan stok saat ditolak/dibatalkan 🐛 (sekarang stok tidak pernah berkurang sama sekali)
-- [ ] Backend: `GET /api/seller/orders?status=&page=` (tab Baru/Diproses/Dikirim/Selesai/Batal) & `GET /api/seller/orders/{id}` (detail + pembeli + alamat + rincian komisi)
-- [ ] Backend: `POST /api/seller/orders/{id}/accept` (Baru → Diproses), `POST /api/seller/orders/{id}/reject` (+ alasan, stok & dana dikembalikan), `POST /api/seller/orders/{id}/ship` (kurir + nomor resi + foto bukti opsional → Dikirim)
-- [ ] Backend: job/pengecekan **auto-cancel** kalau penjual tidak konfirmasi sampai `AutoCancelAt`, dan **auto-complete** X hari setelah `Shipped`
-- [ ] Backend: setiap transisi status memanggil `INotificationService` ke pembeli (reuse `NotifyOrderStatusChangedAsync`, sesuaikan supaya berbasis sub-order)
-- [ ] Backend: batasi `PATCH /api/orders/{id}/status` versi pembeli — hanya boleh `Cancelled` (sebelum diproses) dan `Completed` (terima barang); perubahan status lain jadi wewenang seller ⚠️ ini mengubah perilaku yang dicatat di TASKS.md Fase 4
-- [ ] Backend: ongkir per kurir & berat (menggantikan `FlatShippingCost = 15000`) — minimal tabel tarif statis dulu, integrasi API kurir (RajaOngkir/Biteship) menyusul
-- [ ] Flutter: halaman **Daftar Pesanan** (tab status, countdown batas konfirmasi, tombol Tolak/Proses, tombol Input Resi)
+- [x] Backend: **refactor checkout** — `POST /api/orders` mengelompokkan cart item per `StoreId`, membuat 1 `Order` + N `SubOrder`, menghitung ongkir & komisi per toko
+
+  - `Controllers/OrdersController.cs` `Checkout` — `cartItems.GroupBy(ci => ci.Product.StoreId)`, per grup bikin 1 `SubOrder` (`SubOrderNumber = "{OrderNumber}-{seq}"`, `Status=WaitingPayment`, `ShippingCost` = quote kurir default (`Models/Orders/CourierOption.cs`, tabel statis 3 kurir), `CommissionAmount = Subtotal * Platform:CommissionPercent/100`, `SellerEarning = Subtotal+ShippingCost-CommissionAmount`), assign `OrderItem.SubOrderId`. `Order.Status`/`TotalAmount`/`ShippingCost` jadi agregat dari semua `SubOrder` (helper `Services/OrderStatusHelper.cs`). `Models/Order.cs` ditambah nav `ICollection<SubOrder> SubOrders` (perbaikan relasi 1 arah dari Fase 0) + `ShopyDbContext` di-update `.WithMany(o => o.SubOrders)`.
+  - Endpoint lama `PATCH /api/orders/{id}/status` (bebas ke status apa pun) **dihapus total**, bukan dibatasi — diganti endpoint baru khusus pembeli di `Controllers/SubOrdersController.cs` (`GET /api/orders/sub-orders`, `GET /api/orders/sub-orders/{id}`, `PATCH /api/orders/sub-orders/{id}/status`, cuma terima `Cancelled` sebelum `Processing` atau `Completed` setelah `Shipped`).
+  - `OrderDetailDto` diubah jadi **envelope ringan** (`Status`, `TotalAmount`, `Address`, list `SubOrders`) — rincian per item/ongkir/komisi pindah ke `SubOrderDetailDto` (`Models/Orders/SubOrderDtos.cs`). `GET /api/orders` & `GET /api/orders/{id}` (ringkasan order induk) tetap dipertahankan untuk halaman sukses checkout multi-toko.
+- [x] Backend: **kurangi stok** saat sub-order diterima penjual 🐛 (sekarang stok tidak pernah berkurang sama sekali)
+
+  - `Controllers/SellerOrdersController.cs` `Accept` — `Product.Stock -= item.Quantity` saat `NewOrder`→`Processing`. ⚠️ **Restorasi stok saat ditolak/dibatalkan TIDAK diimplementasikan** — dengan alur accept/reject/auto-cancel yang ada sekarang, `reject`/auto-cancel cuma valid dari status `NewOrder` (sebelum stok dikurangi), jadi belum ada skenario nyata yang butuh restorasi. Baru relevan kalau nanti ada alur "batalkan setelah diproses".
+- [x] Backend: `GET /api/seller/orders?status=&page=` (tab Baru/Diproses/Dikirim/Selesai) & `GET /api/seller/orders/{id}` (detail + pembeli + alamat + rincian komisi)
+
+  - `Controllers/SellerOrdersController.cs` + `Models/Sellers/SellerOrderDtos.cs`. ⚠️ **Cuma 4 tab** (`new`/`processing`/`shipped`/`completed`) sesuai mockup — tidak ada tab "Batal" terpisah (pesanan `Rejected`/`Cancelled` tidak muncul di tab manapun untuk sekarang, bisa ditambah nanti). Info pembeli ("Bergabung {tahun} - N pesanan") — N dihitung dari jumlah `SubOrder` pembeli itu **di toko ini saja**.
+- [x] Backend: `POST /api/seller/orders/{id}/accept` (Baru → Diproses), `POST /api/seller/orders/{id}/reject` (+ alasan, stok dikembalikan), `POST /api/seller/orders/{id}/ship` (kurir + nomor resi + foto bukti opsional → Dikirim)
+
+  - Ketiganya di `SellerOrdersController.cs`, masing-masing mencatat `SubOrderStatusHistory` + panggil `NotifySubOrderStatusChangedAsync` + `RecalculateOrderStatus` (agregat `Order.Status`). ⚠️ "stok dikembalikan" saat reject tidak relevan (lihat poin stok di atas — reject terjadi sebelum stok dikurangi).
+  - Kurir **dipilih seller saat kirim** (bukan buyer saat checkout, sesuai mockup Kirim Pesanan) — field `CourierCode`/`CourierService`/`TrackingNumber` murni info pengiriman, tidak mengubah `ShippingCost` yang sudah dibayar buyer.
+- [x] Backend: job/pengecekan **auto-cancel** kalau penjual tidak konfirmasi sampai `AutoCancelAt`, dan **auto-complete** X hari setelah `Shipped`
+
+  - `Services/SubOrderAutoTransitionService.cs` (`BackgroundService` baru, `PeriodicTimer` 5 menit, jalan langsung saat start) — auto-reject `NewOrder` yang `AutoCancelAt` lewat, auto-complete `Shipped` yang `ShippedAt + Platform:AutoCompleteDays` lewat. Didaftarkan via `builder.Services.AddHostedService<SubOrderAutoTransitionService>()` di `Program.cs`.
+- [x] Backend: setiap transisi status memanggil `INotificationService` ke pembeli (reuse `NotifyOrderStatusChangedAsync`, sesuaikan supaya berbasis sub-order)
+
+  - `INotificationService.NotifyOrderStatusChangedAsync(Order)` diganti `NotifySubOrderStatusChangedAsync(SubOrder, Store)` — body pesan sebut nama toko (mis. `"Pesanan #SHP-...-1 dari Toko A sedang dikirim."`). `Notification.OrderId` tetap dipakai buat deep-link (bukan `SubOrderId` — kolom itu belum ada, tidak nambah migration buat ini).
+- [x] Backend: batasi `PATCH /api/orders/{id}/status` versi pembeli — hanya boleh `Cancelled` (sebelum diproses) dan `Completed` (terima barang); perubahan status lain jadi wewenang seller ⚠️ ini mengubah perilaku yang dicatat di TASKS.md Fase 4
+
+  - Endpoint lama dihapus total (lihat poin checkout di atas), diganti `PATCH /api/orders/sub-orders/{id}/status` dengan pembatasan transisi persis seperti ini.
+- [x] Backend: ongkir per kurir & berat (menggantikan `FlatShippingCost = 15000`) — minimal tabel tarif statis dulu, integrasi API kurir (RajaOngkir/Biteship) menyusul
+
+  - `Models/Orders/CourierOption.cs` — tabel statis 3 kurir (JNE Reguler Rp15.000/2-3hr, J&T Express Rp14.000/2-4hr, SiCepat REG Rp16.000/1-3hr, sesuai mockup). ⚠️ **Bukan per-berat** — mockup tidak menunjukkan tiering berat, jadi tarif flat per kurir per toko. Checkout auto-quote kurir pertama (JNE Reguler) sebagai default; tabel yang sama juga di-hardcode independen di `shopy-seller` (`models/order/courier.dart`) buat pilihan kurir saat kirim, konsisten dengan pola `kMockShippingCost` sebelumnya.
+- [x] Flutter: halaman **Daftar Pesanan** (tab status, countdown batas konfirmasi, tombol Tolak/Proses, tombol Input Resi)
 
   ![Mockup Daftar Pesanan - Bold & Colorful](./shopy-seller/design/assets/pesanan-list-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman **Detail Pesanan** (banner status + countdown, kartu pembeli + tombol chat, alamat & kurir, daftar produk, rincian pembayaran + potongan komisi + estimasi masuk saldo, catatan pembeli)
+  - `shopy-seller/lib/screens/order/order_list_screen.dart` — 4 tab (`ChoiceChip`, pola sama Fase 3), countdown per detik (`Timer.periodic`) buat tab Baru dari `AutoCancelAt`, tombol Tolak (dialog alasan)/Proses Pesanan di tab Baru, tombol "Input Nomor Resi" (buka `ShipOrderScreen`) di tab Diproses.
+- [x] Flutter: halaman **Detail Pesanan** (banner status + countdown, kartu pembeli + tombol chat, alamat & kurir, daftar produk, rincian pembayaran + potongan komisi + estimasi masuk saldo, catatan pembeli)
 
   ![Mockup Detail Pesanan - Bold & Colorful](./shopy-seller/design/assets/pesanan-detail-seller-bold-colorful.png)
 
-- [ ] Flutter: halaman **Kirim Pesanan** (pilih kurir, input/scan nomor resi, foto bukti serah terima, konfirmasi)
+  - `shopy-seller/lib/screens/order/order_detail_screen.dart` — banner dinamis per status, tombol Chat masih placeholder ("belum tersedia", chat itu Fase 7), tombol aksi bawah dinamis (Tolak/Proses untuk Baru, Input Resi untuk Diproses).
+- [x] Flutter: halaman **Kirim Pesanan** (pilih kurir, input/scan nomor resi, foto bukti serah terima, konfirmasi)
 
   ![Mockup Kirim Pesanan - Bold & Colorful](./shopy-seller/design/assets/kirim-pesanan-seller-bold-colorful.png)
 
-- ⚠️ Perubahan di app pembeli: Keranjang dikelompokkan per toko, Checkout menampilkan ongkir per toko, Riwayat & Detail Pesanan dipecah per toko, dan timeline "Lacak Pesanan" dibaca dari `SubOrderStatusHistories`. Tombol "Lacak Paket" bisa diisi nomor resi asli dari seller.
+  - `shopy-seller/lib/screens/order/ship_order_screen.dart` — `RadioGroup<Courier>` pilih kurir dari 3 opsi statis, input resi (tombol Scan placeholder), upload foto opsional lewat `image_picker` + `POST /api/uploads?category=proof` (kategori baru di `UploadsController`), checkbox konfirmasi wajib sebelum submit. Kartu "Pesanan Masuk" baru ditambahkan di `store_profile_screen.dart` (pola sama kartu "Produk Saya" Fase 3) sebagai entry point — bottom nav 5-tab tetap scope Fase 8.
+- [x] Perubahan di app pembeli: Keranjang dikelompokkan per toko, Checkout menampilkan ongkir per toko, Riwayat & Detail Pesanan dipecah per toko, dan timeline "Lacak Pesanan" dibaca dari `SubOrderStatusHistories`. Tombol "Lacak Paket" bisa diisi nomor resi asli dari seller.
+
+  - `shopy-mobile`: `CartItem` + `CartItemDto` (backend) ditambah `storeId`/`storeName`. `CartState.storeGroups`/`selectedStoreGroups` (grouping computed di state layer) dipakai `cart_screen.dart` (section per toko) & `checkout_screen.dart` (kartu produk+ongkir per toko, submit tetap 1 `cartItemIds` gabungan — backend yang kelompokkan). `checkout_success_screen.dart` menampilkan "N toko diproses"; tombol "Lihat Pesanan" (di sini, payment-success, & notifikasi berjenis pesanan) diarahkan ke `OrderHistoryScreen` (bukan detail 1 toko spesifik) karena 1 pembayaran/notifikasi order-level bisa mencakup beberapa toko.
+  - Model/provider/service baru: `models/order/sub_order_*.dart`, `providers/order_provider.dart` (`subOrderDetailProvider`, `orderHistoryProvider` di-refactor pakai `SubOrderSummary`/`SubOrderStatus`), `services/order_api_service.dart` (`getSubOrders`/`getSubOrderDetail`/`updateSubOrderStatus`). Model lama `OrderSummary`/`OrderStatusHistoryEntry` (order-level, dipakai riwayat lama) dihapus karena sudah tergantikan penuh, bukan didiamkan sebagai dead code.
+  - `order_history_screen.dart` — 1 card per `SubOrder` (nama toko ditampilkan), 4 tab sama seperti sebelumnya (`Semua`/`Diproses`/`Dikirim`/`Selesai`) tapi filter sekarang berbasis `SubOrderStatus`. `order_detail_screen.dart` — timeline 5 langkah (`WaitingPayment→NewOrder→Processing→Shipped→Completed`) dari `SubOrderStatusHistories`, tombol "Lacak Paket" menampilkan dialog kurir+resi asli kalau sudah `Shipped`, tombol "Batalkan Pesanan" (`WaitingPayment`/`NewOrder`) atau "Pesanan Diterima" (`Shipped`) sesuai status.
+- ⚠️ **Regresi & verifikasi**: `dotnet build` 0 error/warning. Alur penuh diuji lewat `curl` (2 akun seller beda toko + 1 akun buyer baru): checkout keranjang lintas 2 toko → `Order` punya 2 `SubOrder` `WaitingPayment` dgn subtotal/ongkir/komisi benar → simulasi payment settled langsung lewat DB (Midtrans belum dikonfigurasi di dev, sesuai keterbatasan yang sama dari Fase-fase sebelumnya) → `NewOrder`+`AutoCancelAt` terisi → seller A `accept` (stok produk A berkurang sesuai qty) → seller B `reject` (+alasan, stok produk B tidak berubah) → seller A `ship` (+resi) → buyer `PATCH sub-orders/{id}/status` `Completed` → `Order.Status` teragregat benar di tiap langkah (`Pending→Processing→Shipped→Completed`, sesuai `OrderStatusHelper`, campuran `Completed`+`Rejected` tetap dihitung `Completed`). Notifikasi tercatat benar di tiap transisi (isi pesan sebut nama toko). Regresi: `GET /api/products`, `GET /api/stores/{slug}` normal; akun lama tetap bisa lihat riwayat via endpoint baru. 🐛 **1 bug ditemukan & diperbaiki selama verifikasi**: `SubOrdersController.UpdateStatus` pakai `subOrder.StatusHistories.Add(...)` (lewat navigation collection yang sebagian sudah di-`Include` dari 2 jalur berbeda) menyebabkan `DbUpdateConcurrencyException` konsisten saat buyer klik "Pesanan Diterima" — diperbaiki dengan `dbContext.SubOrderStatusHistories.Add(...)` langsung ke `DbSet`, konsisten dengan pola yang sudah dipakai di controller lain. `flutter analyze` + `flutter test` bersih di **kedua** app (`shopy-seller` & `shopy-mobile`). Verifikasi visual manual belum dilakukan (sama seperti fase-fase sebelumnya).
 
 ## Fase 5 — Keuangan & Pencairan
 

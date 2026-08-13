@@ -26,6 +26,7 @@ public class Order : ISoftDeletable
     public string PostalCode { get; set; } = string.Empty;
 
     public ICollection<OrderItem> OrderItems { get; set; } = [];
+    public ICollection<SubOrder> SubOrders { get; set; } = [];
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

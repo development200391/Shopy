@@ -49,8 +49,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       _selectedAddress = addressState.defaultAddress;
     }
 
+    final storeGroups = cart.selectedStoreGroups;
     final subtotal = items.fold(0, (sum, item) => sum + item.subtotal);
-    const shippingCost = kMockShippingCost;
+    final shippingCost = storeGroups.length * kMockShippingCost;
     final total = subtotal + shippingCost;
 
     return Scaffold(
@@ -77,33 +78,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const _SectionLabel('Produk Dipesan'),
                 const SizedBox(height: AppSpacing.sm),
-                for (final item in items) _OrderItemCard(item: item),
-                const SizedBox(height: AppSpacing.lg),
-                const _SectionLabel('Metode Pengiriman'),
+                for (final group in storeGroups) _StoreOrderGroup(group: group),
                 const SizedBox(height: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Reguler · 2-3 hari', style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(height: 2),
-                          Text('Estimasi tiba 2-3 hari kerja', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        ],
-                      ),
-                      Text(formatRupiah(shippingCost), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
                 const _SectionLabel('Catatan untuk Penjual (Opsional)'),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
@@ -286,6 +262,61 @@ class _AddressCard extends StatelessWidget {
           Text(
             '${address.fullAddress}, ${address.city}',
             style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoreOrderGroup extends StatelessWidget {
+  final CartStoreGroup group;
+
+  const _StoreOrderGroup({required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.storefront_outlined, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 4),
+              Text(group.storeName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final item in group.items) _OrderItemCard(item: item),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('JNE Reguler · 2-3 hari', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 2),
+                    Text(
+                      'Kurir bisa disesuaikan penjual saat mengirim',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+                Text(
+                  formatRupiah(kMockShippingCost),
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
         ],
       ),

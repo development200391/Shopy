@@ -8,7 +8,9 @@ public record CartItemDto(
     string? ImageUrl,
     decimal Price,
     int Quantity,
-    int Stock);
+    int Stock,
+    Guid StoreId,
+    string StoreName);
 
 public record CartDto(Guid Id, IReadOnlyList<CartItemDto> Items);
 

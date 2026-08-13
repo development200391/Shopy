@@ -309,7 +309,7 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
             e.Property(so => so.CommissionAmount).HasPrecision(18, 2);
             e.Property(so => so.SellerEarning).HasPrecision(18, 2);
             e.HasOne(so => so.Order)
-                .WithMany()
+                .WithMany(o => o.SubOrders)
                 .HasForeignKey(so => so.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasOne(so => so.Store)
