@@ -23,7 +23,8 @@ public record StoreSummaryDto(
     string? LogoUrl,
     string? PhoneNumber,
     string Status,
-    bool IsOpen);
+    bool IsOpen,
+    string? ModerationReason);
 
 public record SellerMeResponse(
     Guid UserId,

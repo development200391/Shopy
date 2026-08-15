@@ -1,4 +1,4 @@
-enum StoreStatus { pending, active, suspended, closed }
+enum StoreStatus { pending, active, suspended, closed, rejected }
 
 StoreStatus parseStoreStatus(String raw) {
   switch (raw) {
@@ -8,6 +8,8 @@ StoreStatus parseStoreStatus(String raw) {
       return StoreStatus.suspended;
     case 'Closed':
       return StoreStatus.closed;
+    case 'Rejected':
+      return StoreStatus.rejected;
     case 'Pending':
     default:
       return StoreStatus.pending;
@@ -23,6 +25,7 @@ class StoreSummary {
   final String? phoneNumber;
   final StoreStatus status;
   final bool isOpen;
+  final String? moderationReason;
 
   const StoreSummary({
     required this.id,
@@ -33,6 +36,7 @@ class StoreSummary {
     this.phoneNumber,
     required this.status,
     required this.isOpen,
+    this.moderationReason,
   });
 
   factory StoreSummary.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,7 @@ class StoreSummary {
       phoneNumber: json['phoneNumber'] as String?,
       status: parseStoreStatus(json['status'] as String),
       isOpen: json['isOpen'] as bool,
+      moderationReason: json['moderationReason'] as String?,
     );
   }
 }

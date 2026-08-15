@@ -242,7 +242,7 @@ public class SellerController(
         ? null
         : new StoreSummaryDto(
             store.Id, store.Name, store.Slug, store.Description, store.LogoUrl,
-            store.PhoneNumber, store.Status.ToString(), store.IsOpen);
+            store.PhoneNumber, store.Status.ToString(), store.IsOpen, store.ModerationReason);
 
     private static StoreDetailDto ToDetailDto(Store store) => new(
         store.Id, store.Name, store.Slug, store.Description, store.LogoUrl, store.BannerUrl,
