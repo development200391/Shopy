@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'screens/splash/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -16,8 +17,7 @@ class ShopyAdminApp extends StatelessWidget {
       title: 'Shopy Admin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      // Placeholder — diganti SplashScreen begitu Fase 1 (Auth & Shell) dikerjakan.
-      home: const Scaffold(body: Center(child: Text('Shopy Admin'))),
+      home: const SplashScreen(),
     );
   }
 }
