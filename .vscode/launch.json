@@ -30,6 +30,33 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "shopy-seller (ASUS AI2205 D)",
+            "cwd": "shopy-seller",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "R6AIGF000566YRD"
+        },
+        {
+            "name": "shopy-seller",
+            "cwd": "shopy-seller",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "shopy-seller (profile mode)",
+            "cwd": "shopy-seller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "shopy-seller (release mode)",
+            "cwd": "shopy-seller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
         }
     ]
 }

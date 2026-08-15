@@ -5,6 +5,11 @@
 </p>
 
 Shopy adalah aplikasi mobile e-commerce (marketplace) yang memungkinkan pengguna untuk menjelajah, mencari, dan membeli berbagai produk langsung dari smartphone mereka.
+Login
+admin-demo@shopy.com
+AdminDemo1234!
+
+adb reverse tcp:5083 tcp:5083
 
 ## Fitur
 
