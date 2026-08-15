@@ -47,6 +47,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStoreBalanceService, StoreBalanceService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 // Singleton karena FirebaseApp cuma boleh dibuat sekali per proses.
 builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
 builder.Services.AddHttpClient();
@@ -98,6 +99,7 @@ if (app.Environment.IsDevelopment())
     await CatalogSeeder.SeedAsync(
         seedScope.ServiceProvider.GetRequiredService<ShopyDbContext>(),
         seedScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>());
+    await AdminSeeder.SeedAsync(seedScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>());
 }
 
 app.UseHttpsRedirection();

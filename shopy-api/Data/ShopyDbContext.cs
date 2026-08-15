@@ -44,6 +44,9 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<StoreFollower> StoreFollowers => Set<StoreFollower>();
 
+    // --- Admin (TASKSELLER.md Fase 9) ---
+    public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -207,6 +210,15 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .HasForeignKey(n => n.OrderId)
                 .OnDelete(DeleteBehavior.SetNull);
             e.Property(n => n.CreatedAt).HasDefaultValueSql("now()");
+        });
+
+        builder.Entity<PlatformSettings>(e =>
+        {
+            // Baris singleton (Id selalu 1, lihat PlatformSettingsService) — bukan identity column.
+            e.Property(p => p.Id).ValueGeneratedNever();
+            e.Property(p => p.CommissionPercent).HasPrecision(5, 2);
+            e.Property(p => p.WithdrawalAdminFee).HasPrecision(18, 2);
+            e.Property(p => p.MinWithdrawal).HasPrecision(18, 2);
         });
 
         builder.Entity<RefreshToken>(e =>

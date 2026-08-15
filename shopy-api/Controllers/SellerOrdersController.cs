@@ -14,7 +14,10 @@ namespace shopy_api.Controllers;
 [Authorize(Roles = "Seller")]
 [Route("api/seller/orders")]
 public class SellerOrdersController(
-    ShopyDbContext dbContext, INotificationService notificationService, IStoreBalanceService balanceService) : ControllerBase
+    ShopyDbContext dbContext,
+    INotificationService notificationService,
+    IStoreBalanceService balanceService,
+    IPlatformSettingsService platformSettingsService) : ControllerBase
 {
     private static readonly Dictionary<string, SubOrderStatus> StatusByTab = new()
     {
@@ -106,7 +109,7 @@ public class SellerOrdersController(
         subOrder.AutoCancelAt = null;
         await TransitionAsync(subOrder, null, now);
 
-        const int lowStockThreshold = 10;
+        var lowStockThreshold = (await platformSettingsService.GetAsync()).LowStockThreshold;
         foreach (var item in subOrder.OrderItems)
         {
             if (item.Product.Stock <= lowStockThreshold)

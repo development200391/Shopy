@@ -14,7 +14,7 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize(Roles = "Seller")]
 [Route("api/seller/finance")]
-public class SellerFinanceController(ShopyDbContext dbContext, IConfiguration configuration) : ControllerBase
+public class SellerFinanceController(ShopyDbContext dbContext, IPlatformSettingsService platformSettingsService) : ControllerBase
 {
     [HttpGet("balance")]
     public async Task<ActionResult<StoreBalanceDto>> GetBalance()
@@ -106,7 +106,9 @@ public class SellerFinanceController(ShopyDbContext dbContext, IConfiguration co
             return BadRequest(new { message = "Rekening belum terverifikasi." });
         }
 
-        var minWithdrawal = configuration.GetValue("Platform:MinWithdrawal", 50000m);
+        var platformSettings = await platformSettingsService.GetAsync();
+
+        var minWithdrawal = platformSettings.MinWithdrawal;
         if (request.Amount < minWithdrawal)
         {
             return BadRequest(new { message = $"Minimal pencairan Rp{minWithdrawal:N0}." });
@@ -118,7 +120,7 @@ public class SellerFinanceController(ShopyDbContext dbContext, IConfiguration co
             return BadRequest(new { message = "Saldo tidak mencukupi." });
         }
 
-        var maxPerDay = configuration.GetValue("Platform:MaxWithdrawalsPerDay", 3);
+        var maxPerDay = platformSettings.MaxWithdrawalsPerDay;
         var todayStart = DateTime.UtcNow.Date;
         var todayCount = await dbContext.Withdrawals.CountAsync(w => w.StoreId == storeId && w.RequestedAt >= todayStart);
         if (todayCount >= maxPerDay)
@@ -126,7 +128,7 @@ public class SellerFinanceController(ShopyDbContext dbContext, IConfiguration co
             return BadRequest(new { message = $"Maksimal {maxPerDay}x pencairan per hari." });
         }
 
-        var adminFee = configuration.GetValue("Platform:WithdrawalAdminFee", 2500m);
+        var adminFee = platformSettings.WithdrawalAdminFee;
         var netAmount = request.Amount - adminFee;
         if (netAmount <= 0)
         {

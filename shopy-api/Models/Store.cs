@@ -15,6 +15,8 @@ public class Store : ISoftDeletable
     public string? PhoneNumber { get; set; }
 
     public StoreStatus Status { get; set; } = StoreStatus.Pending;
+    // Diisi admin saat reject/suspend (TASKSELLER.md Fase 9), dikosongkan lagi saat activate.
+    public string? ModerationReason { get; set; }
     public bool IsOpen { get; set; } = true;
 
     public decimal RatingAverage { get; set; }

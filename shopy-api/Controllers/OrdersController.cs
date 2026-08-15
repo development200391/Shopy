@@ -12,7 +12,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/orders")]
-public class OrdersController(ShopyDbContext dbContext, IConfiguration configuration, INotificationService notificationService) : ControllerBase
+public class OrdersController(
+    ShopyDbContext dbContext, INotificationService notificationService, IPlatformSettingsService platformSettingsService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<OrderSummaryDto>>> GetOrders(
@@ -97,7 +98,7 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
             }
         }
 
-        var commissionPercent = configuration.GetValue("Platform:CommissionPercent", 2m);
+        var commissionPercent = (await platformSettingsService.GetAsync()).CommissionPercent;
         var courier = Couriers.Default;
         var now = DateTime.UtcNow;
         var orderNumber = await GenerateOrderNumberAsync();

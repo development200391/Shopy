@@ -9,7 +9,7 @@ namespace shopy_api.Services;
 /// auto-complete pesanan yang sudah dikirim tapi tidak dikonfirmasi pembeli dalam
 /// `Platform:AutoCompleteDays` sejak `ShippedAt` (TASKSELLER.md Fase 4).
 /// </summary>
-public class SubOrderAutoTransitionService(IServiceScopeFactory scopeFactory, IConfiguration configuration) : BackgroundService
+public class SubOrderAutoTransitionService(IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
 
@@ -35,9 +35,10 @@ public class SubOrderAutoTransitionService(IServiceScopeFactory scopeFactory, IC
         var dbContext = scope.ServiceProvider.GetRequiredService<ShopyDbContext>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
         var balanceService = scope.ServiceProvider.GetRequiredService<IStoreBalanceService>();
+        var platformSettingsService = scope.ServiceProvider.GetRequiredService<IPlatformSettingsService>();
 
         var now = DateTime.UtcNow;
-        var autoCompleteDays = configuration.GetValue("Platform:AutoCompleteDays", 3);
+        var autoCompleteDays = (await platformSettingsService.GetAsync()).AutoCompleteDays;
 
         var expiredNew = await dbContext.SubOrders
             .Where(so => so.Status == SubOrderStatus.NewOrder && so.AutoCancelAt != null && so.AutoCancelAt <= now)

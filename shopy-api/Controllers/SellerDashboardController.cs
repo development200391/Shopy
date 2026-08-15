@@ -11,10 +11,8 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize(Roles = "Seller")]
 [Route("api/seller/dashboard")]
-public class SellerDashboardController(ShopyDbContext dbContext) : ControllerBase
+public class SellerDashboardController(ShopyDbContext dbContext, IPlatformSettingsService platformSettingsService) : ControllerBase
 {
-    private const int LowStockThreshold = 10;
-
     [HttpGet]
     public async Task<ActionResult<SellerDashboardDto>> GetDashboard()
     {
@@ -39,10 +37,11 @@ public class SellerDashboardController(ShopyDbContext dbContext) : ControllerBas
         // — deviasi yang didokumentasikan di TASKSELLER.md Fase 8.
         var storeVisitors = await dbContext.Products.Where(p => p.StoreId == storeId).SumAsync(p => p.ViewCount);
 
+        var lowStockThreshold = (await platformSettingsService.GetAsync()).LowStockThreshold;
         var newOrders = await dbContext.SubOrders.CountAsync(so => so.StoreId == storeId && so.Status == SubOrderStatus.NewOrder);
         // Tidak ada status "ReadyToShip" terpisah di skema — "siap dikirim" dipetakan ke Processing.
         var readyToShip = await dbContext.SubOrders.CountAsync(so => so.StoreId == storeId && so.Status == SubOrderStatus.Processing);
-        var lowStockCount = await dbContext.Products.CountAsync(p => p.StoreId == storeId && p.IsActive && p.Stock <= LowStockThreshold);
+        var lowStockCount = await dbContext.Products.CountAsync(p => p.StoreId == storeId && p.IsActive && p.Stock <= lowStockThreshold);
         var unrepliedReviews = await dbContext.Reviews.CountAsync(r => r.StoreId == storeId && r.SellerReply == null);
 
         var sevenDaysAgo = todayStart.AddDays(-6);

@@ -330,14 +330,16 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 - [x] Tambahan kecil: `OrderListScreen`/`ReviewListScreen` (shopy-seller) ditambah parameter opsional `initialStatus`/`initialFilter` supaya baris "Perlu Ditindaklanjuti" di dashboard bisa deep-link ke tab yang relevan. "Stok produk menipis" mengarah ke `ProductListScreen` polos (tidak ada tab low-stock di layar itu — di luar scope menambah tab baru ke layar Fase 3).
 - ⚠️ Firebase: `shopy-seller` **belum didaftarkan** sebagai aplikasi kedua di project Firebase yang sama dengan `shopy-mobile` — perlu `flutterfire configure` (menghasilkan `shopy-seller/lib/firebase_options.dart`, `google-services.json`, dll.) dijalankan manual oleh user (butuh akses akun/CLI Firebase, di luar kemampuan sesi ini). Sudah dibuat `shopy-seller/lib/firebase_options.dart` **placeholder** (`REPLACE_ME`) supaya kode compile — `PushNotificationService.initialize()` gagal dengan aman & no-op sampai file itu diganti asli, sisa app tetap berfungsi normal. Semua kode push lainnya (`NotificationService`, `AppType`, dst.) sudah app-agnostic dan siap jalan begitu file itu diganti, tanpa perubahan kode lagi.
 
-## Fase 9 — Admin & Moderasi (minimal)
+## Fase 9 — Admin & Moderasi (minimal) ✅
 
-- [ ] Backend: `[Authorize(Roles = "Admin")]` — verifikasi toko (approve/reject + alasan), suspend/aktifkan toko
-- [ ] Backend: proses pencairan (`PATCH /api/admin/withdrawals/{id}` → `Processing`/`Completed`/`Rejected`)
-- [ ] Backend: moderasi produk & ulasan (takedown produk bermasalah)
-- [ ] Backend: **kunci `POST /api/notifications/promo` ke role Admin** — sekarang bisa dipanggil user manapun yang login ⚠️
-- [ ] Backend: pengaturan platform (persentase komisi, biaya admin, ambang stok menipis)
-- [ ] Untuk tahap awal cukup lewat Swagger + akun admin yang di-seed; dashboard admin (web) di luar cakupan dokumen ini
+- [x] Backend: `[Authorize(Roles = "Admin")]` — `AdminStoresController` (`api/admin/stores`): `GET ?status=`, `POST {id}/approve` (Pending→Active), `POST {id}/reject` (body `{reason}`, Pending→Rejected), `POST {id}/suspend` (body `{reason?}`, Active→Suspended), `POST {id}/activate` (Suspended→Active). Migration nambah `StoreStatus.Rejected` (disimpan string, append aman) + `Store.ModerationReason` (dipakai bareng reject & suspend, dikosongkan lagi saat activate).
+- [x] Backend: proses pencairan — `AdminWithdrawalsController` `PATCH /api/admin/withdrawals/{id}` body `{status, reason?}` → `Processing`/`Completed`/`Rejected`. Ditemukan saat implementasi: dana withdrawal sudah dipotong dari `StoreBalance.AvailableBalance` sejak seller **request** (bukan saat admin approve, lihat `SellerFinanceController.RequestWithdrawal`) — jadi `Processing`/`Completed` cuma ubah status, sedangkan `Rejected` **refund** penuh (`Amount`) balik ke saldo toko + baris `BalanceTransaction` `Type=Refund` (enum sudah ada). `Completed` memanggil `NotifyWithdrawalCompletedAsync` — **menutup gap dari Fase 8** (method itu dibuat di sana tapi belum ada pemanggil).
+- [x] Backend: moderasi produk & ulasan — `AdminModerationController`: `POST /api/admin/products/{id}/takedown`, `POST /api/admin/reviews/{id}/takedown`. Reuse 100% mekanisme soft-delete (`ISoftDeletable` + global query filter) yang sudah ada — sama persis dengan `DELETE /api/seller/products/{id}` milik seller sendiri, cuma di-trigger admin. Takedown ulasan juga memanggil `ReviewAggregationHelper.RecalculateProductRatingAsync`/`RecalculateStoreRatingAsync` (helper Fase 7). Tidak ada kolom baru sama sekali untuk item ini.
+- [x] Backend: **`POST /api/notifications/promo` dikunci ke role Admin** — sebelumnya terbuka buat user manapun yang login.
+- [x] Backend: pengaturan platform — tabel baru `PlatformSettings` (1 baris singleton) + `IPlatformSettingsService` (`GetAsync`/`UpdateAsync`), `AdminSettingsController` (`GET`/`PUT /api/admin/settings`). Menggantikan 6 titik baca `IConfiguration:Platform:*` yang sebelumnya statis (`OrdersController`, `PaymentsController`, `SellerFinanceController` ×3, `SubOrderAutoTransitionService`) + 2 titik hardcode `LowStockThreshold=10` dari Fase 8 (`SellerDashboardController`, `SellerOrdersController.Accept`) — baris pertama dibuat otomatis dari default `appsettings.json` yang sudah ada, jadi tidak ada perubahan perilaku sampai admin benar-benar ubah sesuatu. `SellerProductsController.GetLowStock`'s `threshold` query-param **sengaja tidak diubah** (itu filter ad-hoc seller sendiri, bukan aturan platform).
+- [x] Diuji lewat Swagger/curl + akun admin yang di-seed — **tidak ada dashboard admin (web)**, sesuai cakupan dokumen ini.
+  - `Data/AdminSeeder.cs` (baru, dev-only, pola sama `CatalogSeeder.EnsureDemoStoreAsync`): akun `admin-demo@shopy.com` / `AdminDemo1234!` (role Admin), dipanggil di `Program.cs` bareng seeding dev lainnya.
+  - Diverifikasi end-to-end via curl: toko Pending→approve (langsung kebuka publik)/reject+alasan/suspend+alasan (langsung tertutup dari publik)→activate; withdrawal request→Processing→Completed (baris `Notification` `Type=Withdrawal` muncul, gap Fase 8 tertutup) dan request kedua→Rejected (saldo balik persis ke jumlah sebelum request + baris `BalanceTransaction` `Refund`); takedown ulasan (rating produk recalculate ke 0) lalu takedown produk (hilang dari endpoint publik, 404); kunci promo (403 non-admin, 200 admin); ubah `CommissionPercent` lewat `PUT /api/admin/settings` lalu checkout baru → `SubOrder.CommissionAmount` langsung pakai persentase baru tanpa redeploy.
 
 ## Fase 10 — Polish & Testing
 
@@ -366,6 +368,13 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
 ```
 test@shopy.com
 Test1234!
+```
+
+**Akun demo dev-only lain (dibuat seeder, cuma jalan di `Environment.IsDevelopment()`):**
+
+```
+seller-demo@shopy.com / SellerDemo1234!   (role Seller, CatalogSeeder)
+admin-demo@shopy.com  / AdminDemo1234!    (role Admin, AdminSeeder — Fase 9)
 ```
 
 **Struktur monorepo setelah Fase 0:**

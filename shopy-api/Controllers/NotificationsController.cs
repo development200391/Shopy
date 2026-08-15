@@ -65,10 +65,11 @@ public class NotificationsController(ShopyDbContext dbContext, INotificationServ
     }
 
     /// <summary>
-    /// Broadcast notifikasi promo ke semua user. Sama seperti endpoint update status
-    /// pesanan di Fase 4 — app ini belum punya role admin/seller terpisah, jadi
-    /// endpoint ini masih terbuka buat user manapun yang login (lihat TASKS.md Fase 6).
+    /// Broadcast notifikasi promo ke semua user. Dikunci ke role Admin sejak
+    /// TASKSELLER.md Fase 9 — sebelumnya terbuka buat user manapun yang login
+    /// (lihat TASKS.md Fase 6).
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("promo")]
     public async Task<IActionResult> BroadcastPromo(BroadcastPromoRequest request)
     {

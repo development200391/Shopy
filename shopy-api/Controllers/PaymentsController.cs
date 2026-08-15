@@ -17,7 +17,7 @@ public class PaymentsController(
     IMidtransService midtransService,
     INotificationService notificationService,
     IStoreBalanceService balanceService,
-    IConfiguration configuration) : ControllerBase
+    IPlatformSettingsService platformSettingsService) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<PaymentDto>> CreatePayment(Guid orderId, CreatePaymentRequest request)
@@ -229,7 +229,7 @@ public class PaymentsController(
         if (newStatus == PaymentStatus.Settled)
         {
             var now = DateTime.UtcNow;
-            var autoCancelHours = configuration.GetValue("Platform:AutoCancelHours", 24);
+            var autoCancelHours = (await platformSettingsService.GetAsync()).AutoCancelHours;
             foreach (var subOrder in order.SubOrders.Where(so => so.Status == SubOrderStatus.WaitingPayment))
             {
                 subOrder.Status = SubOrderStatus.NewOrder;
