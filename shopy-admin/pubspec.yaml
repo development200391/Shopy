@@ -38,6 +38,7 @@ dependencies:
   google_fonts: ^8.2.1
   flutter_secure_storage: ^10.3.1
   dio: ^5.11.0
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +50,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -60,6 +62,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/logo.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -91,3 +96,26 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Config buat `dart run flutter_launcher_icons` — sumbernya di-generate dari
+# assets/logo.svg lewat headless Chrome, bukan ditulis manual, karena
+# flutter_launcher_icons butuh PNG bukan SVG. Pola sama seperti shopy-seller.
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: "launcher_icon"
+  adaptive_icon_background: "#2B2D42"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  ios: true
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#2B2D42"
+    theme_color: "#2B2D42"
