@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
+import '../moderation/moderation_home_screen.dart';
 import '../store/store_list_screen.dart';
 import '../withdrawal/withdrawal_list_screen.dart';
 
@@ -12,8 +13,7 @@ import '../withdrawal/withdrawal_list_screen.dart';
 /// ditunda lalu di-retrofit seperti `shopy-seller`, lihat TASKADMIN.md Fase 1)
 /// karena cakupan app ini sudah diketahui sejak awal cuma 4 area.
 ///
-/// Tab Moderasi masih placeholder — diganti halaman asli begitu Fase 4
-/// (TASKADMIN.md) dikerjakan. Tab Toko & Pencairan sudah asli sejak Fase 2-3.
+/// Semua tab utama (Toko/Pencairan/Moderasi) sudah asli sejak Fase 2-4.
 class AdminHomeShell extends StatefulWidget {
   const AdminHomeShell({super.key});
 
@@ -27,7 +27,7 @@ class _AdminHomeShellState extends State<AdminHomeShell> {
   static const _tabs = [
     StoreListScreen(),
     WithdrawalListScreen(),
-    _PlaceholderTab(icon: Icons.gavel_outlined, title: 'Moderasi'),
+    ModerationHomeScreen(),
     _LainnyaTab(),
   ];
 
@@ -44,31 +44,6 @@ class _AdminHomeShellState extends State<AdminHomeShell> {
           NavigationDestination(icon: Icon(Icons.gavel_outlined), selectedIcon: Icon(Icons.gavel), label: 'Moderasi'),
           NavigationDestination(icon: Icon(Icons.more_horiz_outlined), selectedIcon: Icon(Icons.more_horiz), label: 'Lainnya'),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _PlaceholderTab({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: AppColors.textSecondary),
-            const SizedBox(height: AppSpacing.md),
-            const Text('Halaman ini belum tersedia', style: TextStyle(color: AppColors.textSecondary)),
-          ],
-        ),
       ),
     );
   }

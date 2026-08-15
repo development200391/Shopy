@@ -89,12 +89,18 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
   - Skrip 2 (jalur Tolak, toko & withdrawal baru lagi): admin `PATCH {status:"Rejected", reason:"..."}` → `psql` konfirmasi `StoreBalance.AvailableBalance` balik dari `150000` ke `200000` + 1 baris `BalanceTransaction` baru `Type=Refund, Amount=50000` → filter `?status=Rejected` menampilkan item ini.
   - Verifikasi visual manual (`flutter run`) belum dilakukan.
 
-## Fase 4 — Moderasi Produk & Ulasan
+## Fase 4 — Moderasi Produk & Ulasan ✅
 
-- [ ] Backend: `GET /api/admin/products?search=&page=` (cari produk lintas semua toko — nama produk, nama toko, status aktif) — menutup gap #4
-- [ ] Backend: `GET /api/admin/reviews?search=&page=` (cari ulasan lintas semua toko — bisa cari by nama produk/nama pembeli, atau list ulasan rating rendah dulu sebagai default sort) — menutup gap #4
-- [ ] Flutter: halaman **Cari Produk** — search bar + list hasil (thumbnail, nama, toko, status) + tombol Takedown per item + dialog konfirmasi
-- [ ] Flutter: halaman **Cari Ulasan** — search bar + list hasil (rating, komentar, nama produk/toko/pembeli) + tombol Takedown per item + dialog konfirmasi
+- [x] Backend: `GET /api/admin/products?search=&page=&pageSize=` (cari produk lintas semua toko — nama produk atau nama toko, `EF.Functions.ILike`) — menutup gap #4
+  - `AdminProductListItemDto` (baru, `Models/Admin/AdminModerationDtos.cs`), endpoint ditambah di `AdminModerationController.cs` (file yang sama dengan `POST takedown` yang sudah ada dari Fase 9) — pola pagination/search persis `AdminStoresController.GetStores`. ⚠️ **Sengaja TIDAK pakai `IgnoreQueryFilters()`** — produk yang sudah di-takedown otomatis hilang dari hasil pencarian (ikut global query filter `IsDeleted`), karena tidak ada aksi "restore" di scope Fase 4, jadi menampilkannya lagi cuma bikin hasil pencarian ramai tanpa guna.
+- [x] Backend: `GET /api/admin/reviews?search=&page=&pageSize=` (cari ulasan lintas semua toko — by nama produk/nama pembeli, default sort rating rendah dulu lalu terbaru) — menutup gap #4
+  - `AdminReviewListItemDto` (baru, DTO sama). Join `Include(r => r.Product).Include(r => r.Store).Include(r => r.User)` buat dapat nama produk/toko/pembeli — `ReviewDto` yang sudah ada (`Models/Catalog/ReviewDtos.cs`) tidak dipakai karena bentuknya spesifik konteks "1 produk" (tidak ada `ProductName`/`StoreName`), jadi DTO admin baru dibuat khusus untuk konteks lintas-toko ini.
+- [x] Flutter (`shopy-admin`): halaman **Cari Produk** — search bar + list hasil (thumbnail, nama, toko, harga, stok, status) + tombol Takedown per item + dialog konfirmasi
+  - `models/moderation/admin_product.dart`, `services/admin_moderation_api_service.dart`, `providers/admin_product_list_state.dart` + `providers/admin_product_provider.dart` (pola paginated-list sama Fase 2-3), `screens/moderation/product_search_screen.dart`.
+- [x] Flutter (`shopy-admin`): halaman **Cari Ulasan** — search bar + list hasil (badge rating berwarna, komentar, nama produk/toko/pembeli) + tombol Takedown per item + dialog konfirmasi
+  - `models/moderation/admin_review.dart`, `providers/admin_review_list_state.dart` + `providers/admin_review_provider.dart`, `screens/moderation/review_search_screen.dart`.
+  - `screens/moderation/moderation_home_screen.dart` (baru) — halaman menu 2 pintu (Cari Produk / Cari Ulasan), pola kartu sama `_LainnyaTab`, karena keduanya setara pentingnya (bukan salah satu jadi default). `screens/shell/admin_home_shell.dart`: tab **Moderasi** diganti dari placeholder ke halaman ini — **semua 4 tab shell sekarang fungsional penuh**, tidak ada placeholder tersisa.
+- ⚠️ **Verifikasi**: `flutter analyze` bersih (3 info lint pra-ada, sama seperti fase-fase lalu), `flutter test` lulus. Diuji lewat curl ke backend asli: bentuk JSON kedua endpoint dicek cocok persis model Dart-nya → cari produk (hit & miss) → takedown produk → dikonfirmasi hilang dari pencarian admin **dan** 404 di endpoint publik → ulasan di-seed langsung lewat `psql` (pola sama alasan seperti Fase 3 — pembuatan ulasan asli butuh sub-order `Completed`, sudah teruji tuntas di TASKSELLER Fase 7, tidak diulang di sini) → cari ulasan (hit, bentuk JSON cocok) → takedown ulasan → dikonfirmasi hilang dari pencarian **dan** `Product.RatingAverage`/`RatingCount` toko kembali `0`/`0` (rating ter-recalculate benar, satu-satunya ulasan produk itu baru saja dihapus).
 
 ## Fase 5 — Pengaturan Platform
 
