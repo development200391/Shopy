@@ -1,10 +1,8 @@
 <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 <rect width="200" height="200" rx="36" fill="#FF6B35"/>
-<g transform="translate(100,100)">
-<path d="M -56,-40 L 56,-40 L 44,38 L -44,38 Z" fill="#FFFFFF"/>
-<path d="M -56,-40 L -76,-68" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
-<circle cx="-20" cy="55" r="12" fill="#FFFFFF"/>
-<circle cx="20" cy="55" r="12" fill="#FFFFFF"/>
-<text x="0" y="25" text-anchor="middle" font-size="80" font-weight="800" fill="#FF6B35" font-family="sans-serif">S</text>
-</g>
+<path d="M 55 78 V 60 A 56 56 0 0 1 145 60 V 78" fill="none" stroke="#FFFFFF" stroke-width="11.5" stroke-linecap="round"/>
+<path d="M 36 70 H 164 L 156.5 158 A 14 14 0 0 1 142.5 172 H 57.5 A 14 14 0 0 1 43.5 158 Z" fill="#FFFFFF"/>
+<path d="M 36 70 H 164 V 92.8 H 36 Z" fill="#FF6B35"/>
+<circle cx="48.8" cy="92.8" r="12.8" fill="#FFFFFF"/><circle cx="74.4" cy="92.8" r="12.8" fill="#FFFFFF"/><circle cx="100.0" cy="92.8" r="12.8" fill="#FFFFFF"/><circle cx="125.6" cy="92.8" r="12.8" fill="#FFFFFF"/><circle cx="151.2" cy="92.8" r="12.8" fill="#FFFFFF"/>
+<path d="M 121.13 110.77 L 121.13 122.6 Q 116.53 120.54 112.14 119.5 Q 107.77 118.45 103.88 118.45 Q 98.71 118.45 96.23 119.87 Q 93.76 121.29 93.76 124.28 Q 93.76 126.53 95.43 127.79 Q 97.09 129.04 101.48 129.94 L 107.61 131.17 Q 116.94 133.05 120.86 136.87 Q 124.81 140.68 124.81 147.73 Q 124.81 156.97 119.32 161.48 Q 113.83 166.0 102.56 166.0 Q 97.25 166.0 91.89 164.98 Q 86.54 163.98 81.18 161.99 L 81.18 149.83 Q 86.54 152.67 91.54 154.11 Q 96.53 155.55 101.18 155.55 Q 105.9 155.55 108.4 153.98 Q 110.91 152.4 110.91 149.48 Q 110.91 146.87 109.21 145.44 Q 107.51 144.01 102.41 142.89 L 96.83 141.65 Q 88.44 139.86 84.56 135.93 Q 80.69 132.0 80.69 125.34 Q 80.69 116.99 86.08 112.49 Q 91.48 108.0 101.59 108.0 Q 106.2 108.0 111.06 108.69 Q 115.93 109.39 121.13 110.77 Z" fill="#FF6B35"/>
 </svg>
