@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
 import '../moderation/moderation_home_screen.dart';
+import '../settings/platform_settings_screen.dart';
 import '../store/store_list_screen.dart';
 import '../withdrawal/withdrawal_list_screen.dart';
 
@@ -87,7 +88,9 @@ class _LainnyaTab extends ConsumerWidget {
                   title: const Text('Pengaturan Platform'),
                   subtitle: const Text('Komisi, biaya admin, ambang stok'),
                   trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => _notAvailable(context),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const PlatformSettingsScreen())),
                 ),
                 const Divider(height: 1, indent: 56),
                 ListTile(
