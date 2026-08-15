@@ -110,10 +110,14 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
   - `screens/shell/admin_home_shell.dart`: tile "Pengaturan Platform" di tab Lainnya diarahkan ke halaman ini (sebelumnya `_notAvailable` placeholder).
 - ⚠️ **Verifikasi**: `flutter analyze` bersih (3 info lint pra-ada), `flutter test` lulus. Diuji lewat curl: bentuk JSON `GET /api/admin/settings` dicek cocok persis model Dart → `PUT` ubah `CommissionPercent` (persis bentuk body 7-field yang dikirim `admin_settings_api_service.dart`, tanpa DTO wrapper) → dikonfirmasi nilai baru tersimpan + `UpdatedAt` berubah → guard validasi backend dicoba (`MaxWithdrawalsPerDay=0` → 400, sesuai pesan error yang bakal ditampilkan lewat `AdminException`) → nilai dikembalikan ke semula supaya tidak mengotori data dev bersama.
 
-## Fase 6 — Broadcast Promo
+## Fase 6 — Broadcast Promo ✅
 
-- [ ] Backend: sudah lengkap (`POST /api/notifications/promo`, dikunci Admin di TASKSELLER.md Fase 9) — tidak ada task backend baru
-- [ ] Flutter: halaman **Broadcast Promo** — form judul + isi pesan, tombol Kirim + dialog konfirmasi ("akan terkirim ke N user terdaftar"), tampilkan hasil (`recipientCount` dari response)
+- [x] Backend: sudah lengkap (`POST /api/notifications/promo`, dikunci Admin di TASKSELLER.md Fase 9) — tidak ada task backend baru, kuncinya dikonfirmasi ulang lewat curl di bawah
+- [x] Flutter: halaman **Broadcast Promo** — form judul + isi pesan, tombol Kirim + dialog konfirmasi, tampilkan hasil (`recipientCount` dari response)
+  - `services/admin_broadcast_api_service.dart`, `providers/admin_broadcast_provider.dart`, `screens/broadcast/broadcast_promo_screen.dart`.
+  - ⚠️ **Dialog konfirmasi tidak menyebut angka N** (beda dari kalimat asli di rencana fase ini) — backend tidak punya endpoint hitung-user-terpisah, `recipientCount` cuma didapat DARI response `POST` itu sendiri, jadi tidak mungkin ditampilkan sebelum dikirim. Dialog bilang "akan terkirim ke SEMUA user terdaftar" (generik), lalu **setelah** terkirim baru muncul kartu hijau + snackbar menampilkan angka aktual dari response.
+  - `screens/shell/admin_home_shell.dart`: tile "Broadcast Promo" diarahkan ke halaman ini; helper `_notAvailable` (placeholder Fase 1) sudah tidak dipakai sama sekali lagi di file ini, dihapus.
+- ⚠️ **Verifikasi**: `flutter analyze` bersih (3 info lint pra-ada), `flutter test` lulus. Diuji lewat curl: token non-admin dicoba ke `POST /api/notifications/promo` → dikonfirmasi tetap 403 (regresi kunci Fase 9 masih berlaku) → admin kirim promo asli (body 2-field persis bentuk yang dikirim Dart) → `recipientCount` di response dicek cocok jumlah baris `Notification` (`Type=Promo`, judul sama) yang benar-benar tersimpan di DB — 55 user, 55 baris, pas.
 
 ## Fase 7 — Polish & Testing (opsional)
 

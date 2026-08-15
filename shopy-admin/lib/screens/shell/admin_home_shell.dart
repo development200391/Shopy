@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
+import '../broadcast/broadcast_promo_screen.dart';
 import '../moderation/moderation_home_screen.dart';
 import '../settings/platform_settings_screen.dart';
 import '../store/store_list_screen.dart';
@@ -61,12 +62,6 @@ class _LainnyaTab extends ConsumerWidget {
     ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
   }
 
-  void _notAvailable(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Halaman ini belum tersedia.')));
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -98,7 +93,9 @@ class _LainnyaTab extends ConsumerWidget {
                   title: const Text('Broadcast Promo'),
                   subtitle: const Text('Kirim notifikasi promo ke semua user'),
                   trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => _notAvailable(context),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const BroadcastPromoScreen())),
                 ),
               ],
             ),
