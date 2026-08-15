@@ -6,13 +6,14 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
 import '../store/store_list_screen.dart';
+import '../withdrawal/withdrawal_list_screen.dart';
 
 /// Shell navigasi utama admin — bottom nav 4 tab, didesain dari awal (bukan
 /// ditunda lalu di-retrofit seperti `shopy-seller`, lihat TASKADMIN.md Fase 1)
 /// karena cakupan app ini sudah diketahui sejak awal cuma 4 area.
 ///
-/// Tab Pencairan/Moderasi masih placeholder — diganti halaman asli begitu
-/// Fase 3-4 (TASKADMIN.md) dikerjakan. Tab Toko sudah asli sejak Fase 2.
+/// Tab Moderasi masih placeholder — diganti halaman asli begitu Fase 4
+/// (TASKADMIN.md) dikerjakan. Tab Toko & Pencairan sudah asli sejak Fase 2-3.
 class AdminHomeShell extends StatefulWidget {
   const AdminHomeShell({super.key});
 
@@ -25,7 +26,7 @@ class _AdminHomeShellState extends State<AdminHomeShell> {
 
   static const _tabs = [
     StoreListScreen(),
-    _PlaceholderTab(icon: Icons.payments_outlined, title: 'Pencairan Dana'),
+    WithdrawalListScreen(),
     _PlaceholderTab(icon: Icons.gavel_outlined, title: 'Moderasi'),
     _LainnyaTab(),
   ];
