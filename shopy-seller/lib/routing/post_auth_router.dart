@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/store/store_summary.dart';
 import '../providers/seller_provider.dart';
+import '../screens/shell/seller_home_shell.dart';
 import '../screens/store/awaiting_verification_screen.dart';
 import '../screens/store/open_store_screen.dart';
-import '../screens/store/store_profile_screen.dart';
 
 /// Dipanggil setelah login/register/buka-toko sukses (dan dari Splash) — satu-satunya
 /// tempat yang memutuskan halaman berikutnya berdasarkan status toko dari server
@@ -18,7 +18,7 @@ Future<void> navigateAfterAuth(BuildContext context, WidgetRef ref) async {
   final Widget next = store == null
       ? const OpenStoreScreen()
       : store.status == StoreStatus.active
-      ? const StoreProfileScreen()
+      ? const SellerHomeShell()
       : AwaitingVerificationScreen(store: store);
 
   Navigator.of(

@@ -12,7 +12,7 @@ namespace shopy_api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/orders")]
-public class OrdersController(ShopyDbContext dbContext, IConfiguration configuration) : ControllerBase
+public class OrdersController(ShopyDbContext dbContext, IConfiguration configuration, INotificationService notificationService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<OrderSummaryDto>>> GetOrders(
@@ -128,6 +128,11 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
 
         var storeGroups = cartItems.GroupBy(ci => ci.Product.StoreId).ToList();
         var seq = 0;
+        // Dikumpulkan dulu, dikirim setelah SaveChangesAsync final di bawah — supaya kalau
+        // toko lain di checkout multi-toko ini gagal validasi & request di-BadRequest,
+        // UsedCount yang sudah nambah di iterasi sebelumnya tidak "nyangkut" ke notifikasi
+        // padahal transaksinya sendiri tidak pernah tersimpan.
+        var voucherQuotaAlerts = new List<Voucher>();
         foreach (var group in storeGroups)
         {
             seq++;
@@ -183,6 +188,12 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
                     DiscountAmount = voucherDiscount,
                     UsedAt = now,
                 });
+
+                // Alert sekali pas baru nyeberang 80% kuota (bukan tiap pemakaian setelahnya).
+                if (voucher.Quota is > 0 && voucher.UsedCount == (int)Math.Ceiling(voucher.Quota.Value * 0.8))
+                {
+                    voucherQuotaAlerts.Add(voucher);
+                }
             }
 
             foreach (var item in group)
@@ -222,6 +233,11 @@ public class OrdersController(ShopyDbContext dbContext, IConfiguration configura
         foreach (var subOrder in order.SubOrders)
         {
             subOrder.Store = stores[subOrder.StoreId];
+        }
+
+        foreach (var voucher in voucherQuotaAlerts)
+        {
+            await notificationService.NotifyVoucherQuotaAsync(voucher, stores[voucher.StoreId]);
         }
 
         return Ok(ToDetailDto(order));

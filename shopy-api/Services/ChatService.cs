@@ -22,7 +22,7 @@ public interface IChatService
 /// di kedua arah (TASKSELLER.md Fase 7). Realtime cukup polling + push FCM, bukan SignalR —
 /// lihat catatan di plan fase ini.
 /// </summary>
-public class ChatService(ShopyDbContext dbContext, IPushNotificationService pushService) : IChatService
+public class ChatService(ShopyDbContext dbContext, IPushNotificationService pushService, INotificationService notificationService) : IChatService
 {
     public async Task<ChatMessage> SendMessageAsync(
         ChatRoom room,
@@ -61,26 +61,30 @@ public class ChatService(ShopyDbContext dbContext, IPushNotificationService push
 
         await dbContext.SaveChangesAsync();
 
-        var recipientUserId = senderType == ChatSenderType.Buyer
-            ? await GetSellerUserIdAsync(room.StoreId)
-            : room.BuyerUserId;
-
-        var tokens = await dbContext.DeviceTokens
-            .Where(t => t.UserId == recipientUserId)
-            .Select(t => t.Token)
-            .ToListAsync();
-        await pushService.SendAsync(
-            tokens,
-            "Pesan Baru",
-            string.IsNullOrEmpty(room.LastMessagePreview) ? "Kamu dapat pesan baru" : room.LastMessagePreview,
-            new Dictionary<string, string> { ["type"] = "chat", ["roomId"] = room.Id.ToString() });
+        if (senderType == ChatSenderType.Buyer)
+        {
+            // Penerima = seller — insert baris Notification (TASKSELLER.md Fase 8) + push
+            // ke device token yang terdaftar sebagai app Seller. Beda dari cabang di bawah:
+            // sengaja pakai NotificationService supaya muncul di histori Notifikasi seller.
+            var store = await dbContext.Stores.SingleAsync(s => s.Id == room.StoreId);
+            await notificationService.NotifyNewChatAsync(room, store, room.LastMessagePreview ?? string.Empty);
+        }
+        else
+        {
+            // Penerima = buyer — buyer belum punya notification-center untuk chat (Fase 7),
+            // jadi push langsung tanpa baris Notification, persis pola lama.
+            var tokens = await dbContext.DeviceTokens
+                .Where(t => t.UserId == room.BuyerUserId)
+                .Select(t => t.Token)
+                .ToListAsync();
+            await pushService.SendAsync(
+                tokens,
+                "Pesan Baru",
+                string.IsNullOrEmpty(room.LastMessagePreview) ? "Kamu dapat pesan baru" : room.LastMessagePreview,
+                new Dictionary<string, string> { ["type"] = "chat", ["roomId"] = room.Id.ToString() });
+        }
 
         return message;
-    }
-
-    private async Task<Guid> GetSellerUserIdAsync(Guid storeId)
-    {
-        return await dbContext.Stores.Where(s => s.Id == storeId).Select(s => s.OwnerUserId).SingleAsync();
     }
 
     private static string BuildPreview(string? body, string? attachmentUrl, Guid? productId)

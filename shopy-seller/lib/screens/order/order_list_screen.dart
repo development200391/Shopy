@@ -22,14 +22,16 @@ const _tabs = [
 /// Halaman **Daftar Pesanan** — desain terpilih: **Bold & Colorful**
 /// (lihat `design/assets/pesanan-list-seller-bold-colorful.png`).
 class OrderListScreen extends ConsumerStatefulWidget {
-  const OrderListScreen({super.key});
+  final String initialStatus;
+
+  const OrderListScreen({super.key, this.initialStatus = 'new'});
 
   @override
   ConsumerState<OrderListScreen> createState() => _OrderListScreenState();
 }
 
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
-  String _status = 'new';
+  late String _status = widget.initialStatus;
 
   void _refreshAll() {
     for (final tab in _tabs) {

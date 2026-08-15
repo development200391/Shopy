@@ -11,12 +11,11 @@ import '../../services/seller_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../auth/login_screen.dart';
-import '../chat/chat_list_screen.dart';
 import '../finance/finance_screen.dart';
-import '../order/order_list_screen.dart';
+import '../notifications/notification_history_screen.dart';
 import '../promo/promo_voucher_screen.dart';
-import '../product/product_list_screen.dart';
 import '../review/review_list_screen.dart';
+import '../statistics/statistics_screen.dart';
 import 'bank_accounts_screen.dart';
 import 'edit_store_profile_screen.dart';
 import 'store_addresses_screen.dart';
@@ -66,12 +65,6 @@ class _StoreProfileBody extends ConsumerWidget {
 
   const _StoreProfileBody({required this.store});
 
-  void _notAvailableYet(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Fitur ini belum tersedia.')));
-  }
-
   Future<void> _toggleOpen(BuildContext context, WidgetRef ref, bool value) async {
     try {
       await ref.read(sellerApiServiceProvider).setStoreOpen(value);
@@ -111,23 +104,6 @@ class _StoreProfileBody extends ConsumerWidget {
                     onChanged: (value) => _toggleOpen(context, ref, value),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  _OrdersCard(
-                    onTap: () =>
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrderListScreen())),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _ChatCard(
-                    onTap: () =>
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen())),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _ProductsCard(
-                    productCount: store.productCount,
-                    onTap: () => Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (_) => const ProductListScreen())),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
                   _MenuCard(
                     onEditProfile: () => Navigator.of(
                       context,
@@ -140,11 +116,15 @@ class _StoreProfileBody extends ConsumerWidget {
                     ).push(MaterialPageRoute(builder: (_) => const BankAccountsScreen())),
                     onFinance: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
+                    onStatistics: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StatisticsScreen())),
                     onPromo: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PromoVoucherScreen())),
                     onReviews: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReviewListScreen())),
-                    onNotAvailable: () => _notAvailableYet(context),
+                    onNotifications: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute(builder: (_) => const NotificationHistoryScreen())),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   SizedBox(
@@ -324,165 +304,25 @@ class _OpenToggleCard extends StatelessWidget {
   }
 }
 
-class _ProductsCard extends StatelessWidget {
-  final int productCount;
-  final VoidCallback onTap;
-
-  const _ProductsCard({required this.productCount, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Produk Saya', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('$productCount produk terdaftar', style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrdersCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _OrdersCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Pesanan Masuk', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Kelola pesanan dari pembeli', style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ChatCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ChatCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Chat', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Balas pesan dari pembeli', style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MenuCard extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onAddresses;
   final VoidCallback onBankAccounts;
   final VoidCallback onFinance;
+  final VoidCallback onStatistics;
   final VoidCallback onPromo;
   final VoidCallback onReviews;
-  final VoidCallback onNotAvailable;
+  final VoidCallback onNotifications;
 
   const _MenuCard({
     required this.onEditProfile,
     required this.onAddresses,
     required this.onBankAccounts,
     required this.onFinance,
+    required this.onStatistics,
     required this.onPromo,
     required this.onReviews,
-    required this.onNotAvailable,
+    required this.onNotifications,
   });
 
   @override
@@ -492,10 +332,10 @@ class _MenuCard extends StatelessWidget {
       (Icons.location_on_outlined, 'Alamat & Pengiriman', 'Alamat pickup, kurir aktif', onAddresses),
       (Icons.account_balance_outlined, 'Rekening Bank', 'Buat pencairan dana', onBankAccounts),
       (Icons.payments_outlined, 'Keuangan & Pencairan', 'Saldo & riwayat pencairan', onFinance),
-      (Icons.show_chart, 'Statistik Penjualan', 'Omzet, produk terlaris', onNotAvailable),
+      (Icons.show_chart, 'Statistik Penjualan', 'Omzet, produk terlaris', onStatistics),
       (Icons.local_offer_outlined, 'Promo & Voucher', 'Kelola promo toko', onPromo),
       (Icons.star_outline, 'Ulasan Produk', 'Balas ulasan pembeli', onReviews),
-      (Icons.notifications_outlined, 'Pengaturan Notifikasi', 'Pesanan, chat, promo', onNotAvailable),
+      (Icons.notifications_outlined, 'Notifikasi', 'Pesanan, ulasan, keuangan', onNotifications),
     ];
 
     return Container(

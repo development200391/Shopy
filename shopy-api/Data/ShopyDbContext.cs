@@ -183,6 +183,7 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
         builder.Entity<DeviceToken>(e =>
         {
             e.HasIndex(dt => dt.Token).IsUnique();
+            e.Property(dt => dt.AppType).HasConversion<string>().HasMaxLength(10);
             e.HasOne(dt => dt.User)
                 .WithMany()
                 .HasForeignKey(dt => dt.UserId)
@@ -197,6 +198,10 @@ public class ShopyDbContext(DbContextOptions<ShopyDbContext> options)
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(n => n.Store)
+                .WithMany()
+                .HasForeignKey(n => n.StoreId)
+                .OnDelete(DeleteBehavior.SetNull);
             e.HasOne(n => n.Order)
                 .WithMany()
                 .HasForeignKey(n => n.OrderId)

@@ -150,6 +150,8 @@ public class PaymentsController(
         foreach (var subOrder in changedSubOrders)
         {
             await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
+            await notificationService.NotifyNewOrderAsync(subOrder, subOrder.Store);
+            await notificationService.NotifyPaymentReceivedAsync(subOrder, subOrder.Store);
         }
 
         return Ok(ToDto(payment));
@@ -194,6 +196,8 @@ public class PaymentsController(
         foreach (var subOrder in changedSubOrders)
         {
             await notificationService.NotifySubOrderStatusChangedAsync(subOrder, subOrder.Store);
+            await notificationService.NotifyNewOrderAsync(subOrder, subOrder.Store);
+            await notificationService.NotifyPaymentReceivedAsync(subOrder, subOrder.Store);
         }
 
         return Ok();

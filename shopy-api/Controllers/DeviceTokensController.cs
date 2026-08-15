@@ -18,12 +18,14 @@ public class DeviceTokensController(ShopyDbContext dbContext) : ControllerBase
     {
         var userId = User.GetUserId();
         var now = DateTime.UtcNow;
+        var appType = Enum.TryParse<DeviceTokenAppType>(request.AppType, out var parsed) ? parsed : DeviceTokenAppType.Buyer;
 
         var existing = await dbContext.DeviceTokens.SingleOrDefaultAsync(t => t.Token == request.Token);
         if (existing is not null)
         {
             // Token bisa pindah pemilik (mis. logout lalu login akun lain di device yang sama).
             existing.UserId = userId;
+            existing.AppType = appType;
             existing.UpdatedAt = now;
         }
         else
@@ -33,6 +35,7 @@ public class DeviceTokensController(ShopyDbContext dbContext) : ControllerBase
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Token = request.Token,
+                AppType = appType,
                 CreatedAt = now,
                 UpdatedAt = now,
             });

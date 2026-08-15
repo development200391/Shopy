@@ -20,14 +20,16 @@ const _tabs = [
 /// Halaman **Ulasan Produk** — desain terpilih: **Bold & Colorful**
 /// (lihat `design/assets/ulasan-seller-bold-colorful.png`).
 class ReviewListScreen extends ConsumerStatefulWidget {
-  const ReviewListScreen({super.key});
+  final String? initialFilter;
+
+  const ReviewListScreen({super.key, this.initialFilter});
 
   @override
   ConsumerState<ReviewListScreen> createState() => _ReviewListScreenState();
 }
 
 class _ReviewListScreenState extends ConsumerState<ReviewListScreen> {
-  String? _filter;
+  late String? _filter = widget.initialFilter;
 
   void _refreshAll() {
     ref.invalidate(sellerReviewSummaryProvider);

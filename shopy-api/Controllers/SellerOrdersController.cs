@@ -106,6 +106,15 @@ public class SellerOrdersController(
         subOrder.AutoCancelAt = null;
         await TransitionAsync(subOrder, null, now);
 
+        const int lowStockThreshold = 10;
+        foreach (var item in subOrder.OrderItems)
+        {
+            if (item.Product.Stock <= lowStockThreshold)
+            {
+                await notificationService.NotifyLowStockAsync(item.Product, subOrder.Store);
+            }
+        }
+
         return await GetOrder(id);
     }
 

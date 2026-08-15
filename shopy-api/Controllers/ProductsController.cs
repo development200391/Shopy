@@ -90,6 +90,9 @@ public class ProductsController(ShopyDbContext dbContext) : ControllerBase
             return NotFound(new { message = "Produk tidak ditemukan." });
         }
 
+        product.ViewCount++;
+        await dbContext.SaveChangesAsync();
+
         var dto = new ProductDetailDto(
             product.Id, product.Name, product.Slug, product.Description, PricingHelper.EffectivePrice(product),
             product.Stock, product.ImageUrl, product.RatingAverage, product.RatingCount,

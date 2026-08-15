@@ -11,7 +11,7 @@ namespace shopy_api.Controllers;
 
 [ApiController]
 [Route("api")]
-public class ReviewsController(ShopyDbContext dbContext) : ControllerBase
+public class ReviewsController(ShopyDbContext dbContext, INotificationService notificationService) : ControllerBase
 {
     [HttpGet("products/{id:guid}/reviews")]
     public async Task<ActionResult<PagedResult<ReviewDto>>> GetProductReviews(
@@ -40,6 +40,7 @@ public class ReviewsController(ShopyDbContext dbContext) : ControllerBase
         var subOrder = await dbContext.SubOrders
             .Include(so => so.Order)
             .Include(so => so.OrderItems)
+            .Include(so => so.Store)
             .SingleOrDefaultAsync(so => so.Id == subOrderId && so.Order.UserId == userId);
         if (subOrder is null)
         {
@@ -82,6 +83,9 @@ public class ReviewsController(ShopyDbContext dbContext) : ControllerBase
         await ReviewAggregationHelper.RecalculateProductRatingAsync(dbContext, request.ProductId);
         await ReviewAggregationHelper.RecalculateStoreRatingAsync(dbContext, subOrder.StoreId);
         await dbContext.SaveChangesAsync();
+
+        var productName = subOrder.OrderItems.First(oi => oi.ProductId == request.ProductId).ProductNameSnapshot;
+        await notificationService.NotifyNewReviewAsync(review, subOrder.Store, productName);
 
         var user = await dbContext.Users.SingleAsync(u => u.Id == userId);
         return Ok(ToDto(review, user));
