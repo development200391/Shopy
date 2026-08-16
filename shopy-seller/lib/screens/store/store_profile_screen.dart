@@ -344,31 +344,38 @@ class _MenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
       ),
-      child: Column(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Column(
-              children: [
-                ListTile(
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+      // Clip + Material transparan supaya ripple `ListTile` tergambar DI ATAS
+      // dekorasi kartu. Tanpa ini `ListTile` menggambar ripple-nya di `Material`
+      // terdekat yang posisinya di BAWAH dekorasi, jadi setiap tap terasa mati.
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(items[i].$1, color: AppColors.primary, size: 20),
                     ),
-                    child: Icon(items[i].$1, color: AppColors.primary, size: 20),
+                    title: Text(items[i].$2, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(items[i].$3),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                    onTap: items[i].$4,
                   ),
-                  title: Text(items[i].$2, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(items[i].$3),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: items[i].$4,
-                ),
-                if (i < items.length - 1) const Divider(height: 1, indent: 72),
-              ],
-            ),
-        ],
+                  if (i < items.length - 1) const Divider(height: 1, indent: 72),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

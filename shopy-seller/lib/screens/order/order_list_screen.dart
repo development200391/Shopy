@@ -49,18 +49,23 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-            child: Row(
-              children: [
-                for (final tab in _tabs) ...[
-                  _TabChip(
-                    label: tab.label,
-                    count: ref.watch(sellerOrdersProvider(tab.status)).value?.length,
-                    selected: _status == tab.status,
-                    onTap: () => setState(() => _status = tab.status),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
+            // Lihat catatan sama di `product_list_screen.dart` — chip berisi angka
+            // sehingga `Row` polos overflow begitu jumlah pesanannya bertambah.
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final tab in _tabs) ...[
+                    _TabChip(
+                      label: tab.label,
+                      count: ref.watch(sellerOrdersProvider(tab.status)).value?.length,
+                      selected: _status == tab.status,
+                      onTap: () => setState(() => _status = tab.status),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           Expanded(

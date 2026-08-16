@@ -341,15 +341,24 @@ Yang **belum ada sama sekali** dan jadi pekerjaan utama dokumen ini:
   - `Data/AdminSeeder.cs` (baru, dev-only, pola sama `CatalogSeeder.EnsureDemoStoreAsync`): akun `admin-demo@shopy.com` / `AdminDemo1234!` (role Admin), dipanggil di `Program.cs` bareng seeding dev lainnya.
   - Diverifikasi end-to-end via curl: toko Pending→approve (langsung kebuka publik)/reject+alasan/suspend+alasan (langsung tertutup dari publik)→activate; withdrawal request→Processing→Completed (baris `Notification` `Type=Withdrawal` muncul, gap Fase 8 tertutup) dan request kedua→Rejected (saldo balik persis ke jumlah sebelum request + baris `BalanceTransaction` `Refund`); takedown ulasan (rating produk recalculate ke 0) lalu takedown produk (hilang dari endpoint publik, 404); kunci promo (403 non-admin, 200 admin); ubah `CommissionPercent` lewat `PUT /api/admin/settings` lalu checkout baru → `SubOrder.CommissionAmount` langsung pakai persentase baru tanpa redeploy.
 
-## Fase 10 — Polish & Testing
+## Fase 10 — Polish & Testing (sebagian)
 
-- [ ] Review & rapikan UI/UX semua halaman seller (bandingkan dengan mockup)
-- [ ] Unit test backend: pemecahan sub-order, perhitungan komisi & saldo, validasi voucher, transisi status pesanan
-- [ ] Widget/integration test Flutter seller
-- [ ] Testing manual end-to-end: buka toko → verifikasi → tambah produk → pembeli checkout → seller terima → kirim resi → pembeli selesaikan → saldo masuk → ajukan pencairan
-- [ ] Uji lintas-app: pastikan app pembeli (`shopy-mobile`) tetap jalan setelah refactor `StoreId` & `SubOrders`
-- [ ] Seed data demo seller untuk pengembangan (mirip `CatalogSeeder`)
-- [ ] Perbaikan bug hasil testing
+- [x] Review & rapikan UI/UX semua halaman seller (bandingkan dengan mockup)
+  - Baru bisa dikerjakan setelah **debug Windows desktop jalan** (lihat Catatan Teknis soal CMake 4 + Firebase di bawah). Sebelum ini tidak ada halaman seller yang pernah benar-benar dirender di luar HP.
+  - `integration_test/screenshot_test.dart` (baru) — membungkus app asli dengan `RepaintBoundary` lalu `toImage()` **16 halaman** ke `build/ui_review/*.png` di ukuran 412×915 (mobile-first). Ini yang dipakai buat review, bukan tebak-tebakan dari kode.
+  - Halaman yang sudah ditinjau: splash, login, dashboard, produk, pesanan, chat, profil toko, keuangan, statistik, promo & voucher, ulasan, notifikasi, rekening bank, alamat, edit profil, dan kondisi setelah logout. Semuanya render bersih dan konsisten dengan gaya mockup setelah perbaikan di bawah.
+- [ ] Unit test backend: pemecahan sub-order, perhitungan komisi & saldo, validasi voucher, transisi status pesanan — **belum dikerjakan**
+- [x] Widget/integration test Flutter seller
+  - `integration_test/` (baru) + dependensi `integration_test` di `pubspec.yaml`. Menjalankan app Windows ASLI dan menggerakkan UI-nya beneran (ketik, tap, pindah tab, buka menu, logout) sambil memanggil backend `localhost:5083` sungguhan. ⚠️ Prasyarat: tidak boleh ada sesi debug `shopy_seller.exe` yang masih jalan — exe-nya terkunci dan build gagal.
+  - ⚠️ Test dilaporkan **merah** walau semua langkah & screenshot sukses: saat teardown, Flutter mengembalikan ukuran surface dan memicu satu layout pass yang melempar `RenderFlex overflowed by 26 pixels`. Sudah diselidiki dan **bukan cacat halaman** — ke-16 screenshot bersih di 412×915 maupun 360×800, dan Flutter tidak bisa menunjuk widget-nya karena tree sudah dibongkar. Yang dipakai adalah PNG-nya, bukan status hijau/merahnya.
+- [ ] Testing manual end-to-end (buka toko → … → ajukan pencairan) — **belum dikerjakan** sebagai satu alur utuh
+- [ ] Uji lintas-app `shopy-mobile` — **belum dikerjakan**
+- [ ] Seed data demo seller — **belum dikerjakan**, tapi 🐛 **ketahuan rusak**: akun `seller-demo@shopy.com` yang didokumentasikan di Catatan Teknis **tidak pernah ada di DB**. `CatalogSeeder.SeedAsync` berhenti lebih awal kalau tabel `Categories` sudah terisi, dan kategori sudah di-seed jauh sebelum kode akun demo seller ditambahkan — jadi `EnsureDemoStoreAsync` tidak pernah dieksekusi. Selain itu `EnsureDemoStoreAsync` juga mengembalikan toko pertama yang sudah ada, sehingga tidak akan pernah membuat akun demo di DB yang sudah berisi toko. Screenshot test sementara memakai akun seller lain (bisa ditimpa lewat `--dart-define`).
+- [x] Perbaikan bug hasil testing — 🐛 **4 bug nyata ditemukan & diperbaiki**, semuanya lolos dari `flutter analyze` dan tidak mungkin terlihat tanpa merender app:
+  1. **`ListTile` di dalam `Container` ber-`BoxDecoration` berwarna** (`_MenuCard`, `store_profile_screen.dart`) — ripple digambar di `Material` yang posisinya di bawah dekorasi, jadi **8 menu di tab Toko terasa mati saat ditap**. Diperbaiki dengan `Material(color: Colors.transparent)` + `clipBehavior: Clip.antiAlias`. (Bug identik pernah ditemukan di `shopy-admin`, lihat TASKADMIN.md Fase 7.)
+  2. **Overflow 17px** di baris chip filter `product_list_screen.dart` — label chip memuat angka ("Nonaktif 12") sehingga `Row` polos meluber begitu jumlahnya 2 digit. Dibuat `SingleChildScrollView` horizontal.
+  3. **Overflow 38px** di baris chip filter `order_list_screen.dart` — sebab & perbaikan sama.
+  4. **🔴 `Notifier.build()` memanggil `_fetch()` sinkron** (`notification_provider.dart`) — `_fetch` menyentuh `state` sebelum `build()` mengembalikan nilai, sehingga Riverpod melempar **"Tried to read the state of an uninitialized provider"** dan **halaman Notifikasi gagal dibuka**. Diperbaiki dengan `Future.microtask(...)`. Bug identik dengan yang ditemukan di 4 notifier `shopy-admin`. Catatan: `_load()` di `store_settings_provider.dart` (2 tempat) **aman** karena baris pertamanya langsung `await`.
 
 ## Fase 11 — Rilis
 

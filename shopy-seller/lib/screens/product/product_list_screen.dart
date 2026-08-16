@@ -88,34 +88,40 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                child: Row(
-                  children: [
-                    _TabChip(
-                      label: 'Semua ${products.length}',
-                      selected: _tab == _ProductTab.all,
-                      onTap: () => setState(() => _tab = _ProductTab.all),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    _TabChip(
-                      label: 'Aktif ${products.where((p) => _matchesTab(p, _ProductTab.active)).length}',
-                      selected: _tab == _ProductTab.active,
-                      onTap: () => setState(() => _tab = _ProductTab.active),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    _TabChip(
-                      label:
-                          'Nonaktif ${products.where((p) => _matchesTab(p, _ProductTab.inactive)).length}',
-                      selected: _tab == _ProductTab.inactive,
-                      onTap: () => setState(() => _tab = _ProductTab.inactive),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    _TabChip(
-                      label:
-                          'Habis ${products.where((p) => _matchesTab(p, _ProductTab.outOfStock)).length}',
-                      selected: _tab == _ProductTab.outOfStock,
-                      onTap: () => setState(() => _tab = _ProductTab.outOfStock),
-                    ),
-                  ],
+                // Harus bisa di-scroll horizontal: label chip ikut memuat angka
+                // ("Nonaktif 12"), jadi total lebarnya melebihi layar begitu
+                // jumlahnya 2 digit dan `Row` polos langsung overflow.
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _TabChip(
+                        label: 'Semua ${products.length}',
+                        selected: _tab == _ProductTab.all,
+                        onTap: () => setState(() => _tab = _ProductTab.all),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      _TabChip(
+                        label: 'Aktif ${products.where((p) => _matchesTab(p, _ProductTab.active)).length}',
+                        selected: _tab == _ProductTab.active,
+                        onTap: () => setState(() => _tab = _ProductTab.active),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      _TabChip(
+                        label:
+                            'Nonaktif ${products.where((p) => _matchesTab(p, _ProductTab.inactive)).length}',
+                        selected: _tab == _ProductTab.inactive,
+                        onTap: () => setState(() => _tab = _ProductTab.inactive),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      _TabChip(
+                        label:
+                            'Habis ${products.where((p) => _matchesTab(p, _ProductTab.outOfStock)).length}',
+                        selected: _tab == _ProductTab.outOfStock,
+                        onTap: () => setState(() => _tab = _ProductTab.outOfStock),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Expanded(
