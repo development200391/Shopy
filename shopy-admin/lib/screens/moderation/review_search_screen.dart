@@ -60,11 +60,16 @@ class _ReviewSearchScreenState extends ConsumerState<ReviewSearchScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        // Lihat catatan sama di `product_search_screen.dart`.
+        centerTitle: false,
         title: TextField(
           controller: _searchController,
+          textInputAction: TextInputAction.search,
           decoration: const InputDecoration(
-            hintText: 'Cari nama produk atau pembeli...',
+            hintText: 'Cari produk atau pembeli...',
             border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+            prefixIconConstraints: BoxConstraints(minWidth: 32),
           ),
           onSubmitted: (value) => ref.read(adminReviewListProvider.notifier).setSearch(value.trim()),
         ),

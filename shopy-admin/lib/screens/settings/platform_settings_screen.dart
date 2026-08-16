@@ -242,8 +242,24 @@ class _SettingField extends StatelessWidget {
             validator: validator,
             decoration: InputDecoration(
               suffixText: suffix,
+              filled: true,
+              fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              // Border tipis `divider` — `OutlineInputBorder` polos memakai warna
+              // default tema yang jauh lebih gelap/tebal, sehingga form ini tampak
+              // berat dibanding field lain di app (bandingkan `AuthTextField`).
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.divider),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.divider),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
             ),
           ),
         ],

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 
+/// Header login. Sengaja memakai `AppColors.secondary` (navy), BUKAN `primary`
+/// (oranye) seperti versi `shopy-seller` yang jadi asalnya — navy adalah warna
+/// identitas app admin, sama seperti splash, app icon, dan indikator bottom nav.
+/// Logonya juga logo asli (`assets/logo.svg`), bukan huruf "S" tiruan.
 class WaveHeader extends StatelessWidget {
   final double height;
 
@@ -15,7 +20,7 @@ class WaveHeader extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: height,
-        color: AppColors.primary,
+        color: AppColors.secondary,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xl),
@@ -30,13 +35,8 @@ class WaveHeader extends StatelessWidget {
                   color: AppColors.onPrimary,
                   shape: BoxShape.circle,
                 ),
-                child: Text(
-                  'S',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                padding: const EdgeInsets.all(12),
+                child: SvgPicture.asset('assets/logo.svg'),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(

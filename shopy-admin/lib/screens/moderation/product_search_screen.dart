@@ -60,11 +60,18 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        // `centerTitle: false` wajib eksplisit — tema app memusatkan judul, dan
+        // kolom pencarian yang ikut terpusat tampak seperti judul kepotong,
+        // bukan seperti input yang bisa diketik.
+        centerTitle: false,
         title: TextField(
           controller: _searchController,
+          textInputAction: TextInputAction.search,
           decoration: const InputDecoration(
-            hintText: 'Cari nama produk atau toko...',
+            hintText: 'Cari produk atau toko...',
             border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+            prefixIconConstraints: BoxConstraints(minWidth: 32),
           ),
           onSubmitted: (value) => ref.read(adminProductListProvider.notifier).setSearch(value.trim()),
         ),

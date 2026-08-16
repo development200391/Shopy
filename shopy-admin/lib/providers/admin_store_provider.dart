@@ -17,7 +17,11 @@ class AdminStoreListNotifier extends Notifier<AdminStoreListState> {
 
   @override
   AdminStoreListState build() {
-    _fetch(resetItems: true);
+    // WAJIB ditunda ke microtask berikutnya: `_fetch` menyentuh `state` secara
+    // sinkron (`state = state.copyWith(...)`), sementara `state` belum ada
+    // sampai `build()` mengembalikan nilai — memanggilnya langsung bikin
+    // Riverpod lempar "Tried to read the state of an uninitialized provider".
+    Future.microtask(() => _fetch(resetItems: true));
     return const AdminStoreListState(loading: true);
   }
 

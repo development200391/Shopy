@@ -11,7 +11,8 @@ class AdminReviewListNotifier extends Notifier<AdminReviewListState> {
 
   @override
   AdminReviewListState build() {
-    _fetch(resetItems: true);
+    // Lihat catatan di `AdminStoreListNotifier.build()` — harus ditunda.
+    Future.microtask(() => _fetch(resetItems: true));
     return const AdminReviewListState(loading: true);
   }
 

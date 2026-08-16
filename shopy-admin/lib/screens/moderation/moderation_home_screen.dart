@@ -25,28 +25,34 @@ class ModerationHomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
             ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
-                  title: const Text('Cari Produk'),
-                  subtitle: const Text('Cari & takedown produk bermasalah di semua toko'),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const ProductSearchScreen())),
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.rate_review_outlined, color: AppColors.primary),
-                  title: const Text('Cari Ulasan'),
-                  subtitle: const Text('Cari & takedown ulasan bermasalah di semua toko'),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const ReviewSearchScreen())),
-                ),
-              ],
+            // Lihat catatan sama di `_LainnyaTab` (`admin_home_shell.dart`):
+            // tanpa Material transparan di sini, ripple `ListTile` ketutupan dekorasi.
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+                    title: const Text('Cari Produk'),
+                    subtitle: const Text('Cari & takedown produk bermasalah di semua toko'),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute(builder: (_) => const ProductSearchScreen())),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: const Icon(Icons.rate_review_outlined, color: AppColors.primary),
+                    title: const Text('Cari Ulasan'),
+                    subtitle: const Text('Cari & takedown ulasan bermasalah di semua toko'),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute(builder: (_) => const ReviewSearchScreen())),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

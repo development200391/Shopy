@@ -41,10 +41,26 @@ class _AdminHomeShellState extends State<AdminHomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (index) => setState(() => _index = index),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Toko'),
-          NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Pencairan'),
-          NavigationDestination(icon: Icon(Icons.gavel_outlined), selectedIcon: Icon(Icons.gavel), label: 'Moderasi'),
-          NavigationDestination(icon: Icon(Icons.more_horiz_outlined), selectedIcon: Icon(Icons.more_horiz), label: 'Lainnya'),
+          NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront),
+            label: 'Toko',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.payments_outlined),
+            selectedIcon: Icon(Icons.payments),
+            label: 'Pencairan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.gavel_outlined),
+            selectedIcon: Icon(Icons.gavel),
+            label: 'Moderasi',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz_outlined),
+            selectedIcon: Icon(Icons.more_horiz),
+            label: 'Lainnya',
+          ),
         ],
       ),
     );
@@ -57,9 +73,10 @@ class _LainnyaTab extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     await ref.read(authProvider.notifier).logout();
     if (!context.mounted) return;
-    Navigator.of(
-      context,
-    ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -74,30 +91,57 @@ class _LainnyaTab extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.tune, color: AppColors.primary),
-                  title: const Text('Pengaturan Platform'),
-                  subtitle: const Text('Komisi, biaya admin, ambang stok'),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const PlatformSettingsScreen())),
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.campaign_outlined, color: AppColors.primary),
-                  title: const Text('Broadcast Promo'),
-                  subtitle: const Text('Kirim notifikasi promo ke semua user'),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const BroadcastPromoScreen())),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
                 ),
               ],
+            ),
+            // Clip + Material transparan supaya ripple `ListTile` tergambar DI ATAS
+            // dekorasi kartu (kalau tidak, ripple-nya ketutupan dan tap terasa mati)
+            // dan tetap mengikuti sudut membulat kartu.
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.tune, color: AppColors.primary),
+                    title: const Text('Pengaturan Platform'),
+                    subtitle: const Text('Komisi, biaya admin, ambang stok'),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textSecondary,
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PlatformSettingsScreen(),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.campaign_outlined,
+                      color: AppColors.primary,
+                    ),
+                    title: const Text('Broadcast Promo'),
+                    subtitle: const Text(
+                      'Kirim notifikasi promo ke semua user',
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textSecondary,
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BroadcastPromoScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

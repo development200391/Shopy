@@ -17,7 +17,8 @@ class AdminWithdrawalListNotifier extends Notifier<AdminWithdrawalListState> {
 
   @override
   AdminWithdrawalListState build() {
-    _fetch(resetItems: true);
+    // Lihat catatan di `AdminStoreListNotifier.build()` — harus ditunda.
+    Future.microtask(() => _fetch(resetItems: true));
     return const AdminWithdrawalListState(loading: true);
   }
 

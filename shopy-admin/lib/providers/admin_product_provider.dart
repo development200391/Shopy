@@ -16,7 +16,8 @@ class AdminProductListNotifier extends Notifier<AdminProductListState> {
 
   @override
   AdminProductListState build() {
-    _fetch(resetItems: true);
+    // Lihat catatan di `AdminStoreListNotifier.build()` — harus ditunda.
+    Future.microtask(() => _fetch(resetItems: true));
     return const AdminProductListState(loading: true);
   }
 
