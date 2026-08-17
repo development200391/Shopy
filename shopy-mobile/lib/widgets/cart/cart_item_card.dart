@@ -58,10 +58,10 @@ class CartItemCard extends ConsumerWidget {
                   activeColor: AppColors.primary,
                   onChanged: (_) => notifier.toggleItemSelected(item.id),
                 ),
-                const SizedBox(
+                SizedBox(
                   width: 72,
                   height: 72,
-                  child: PlaceholderThumbnail(),
+                  child: ProductThumbnail(imageUrl: item.imageUrl),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

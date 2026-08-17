@@ -10,6 +10,7 @@ class CartItem {
   final String storeId;
   final String storeName;
   final int? originalPrice;
+  final String? imageUrl;
 
   const CartItem({
     required this.id,
@@ -22,6 +23,7 @@ class CartItem {
     required this.storeId,
     required this.storeName,
     this.originalPrice,
+    this.imageUrl,
   });
 
   int get subtotal => price * qty;
@@ -43,6 +45,7 @@ class CartItem {
       storeId: json['storeId'] as String,
       storeName: json['storeName'] as String,
       originalPrice: (json['originalPrice'] as num?)?.round(),
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
@@ -58,6 +61,7 @@ class CartItem {
       storeId: storeId,
       storeName: storeName,
       originalPrice: originalPrice,
+      imageUrl: imageUrl,
     );
   }
 }

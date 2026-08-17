@@ -142,6 +142,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     children: [
                       Expanded(
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
@@ -472,7 +473,7 @@ class _OrderItemCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 56, height: 56, child: PlaceholderThumbnail()),
+          SizedBox(width: 56, height: 56, child: ProductThumbnail(imageUrl: item.imageUrl)),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(

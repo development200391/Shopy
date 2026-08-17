@@ -30,6 +30,7 @@ class CartCheckoutBar extends ConsumerWidget {
             children: [
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Total Pembayaran', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),

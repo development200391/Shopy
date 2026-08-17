@@ -32,7 +32,7 @@ class ProductCard extends StatelessWidget {
               aspectRatio: 1,
               child: Stack(
                 children: [
-                  const Positioned.fill(child: PlaceholderThumbnail()),
+                  Positioned.fill(child: ProductThumbnail(imageUrl: product.imageUrl)),
                   Positioned(
                     right: 4,
                     top: 4,

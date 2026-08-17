@@ -175,7 +175,9 @@ class _HeroImage extends StatelessWidget {
       aspectRatio: 1,
       child: Stack(
         children: [
-          const Positioned.fill(child: PlaceholderThumbnail(borderRadius: 0)),
+          Positioned.fill(
+            child: ProductThumbnail(imageUrl: product.imageUrl, borderRadius: 0),
+          ),
           Positioned(
             left: AppSpacing.md,
             top: AppSpacing.md,
