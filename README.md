@@ -9,7 +9,8 @@ Login
 admin-demo@shopy.com
 AdminDemo1234!
 
-adb reverse tcp:5083 tcp:5083
+& "C:\Users\kokos\AppData\Local\Android\sdk\platform-tools\adb.exe" reverse tcp:5083 tcp:5083
+
 
 ## Fitur
 
