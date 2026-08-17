@@ -199,7 +199,11 @@ class _OrderCard extends StatelessWidget {
                 for (var i = 0; i < order.previewImageUrls.length; i++)
                   Padding(
                     padding: EdgeInsets.only(right: i == order.previewImageUrls.length - 1 ? 0 : AppSpacing.sm),
-                    child: const SizedBox(width: 56, height: 56, child: PlaceholderThumbnail()),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: ProductThumbnail(imageUrl: order.previewImageUrls[i]),
+                    ),
                   ),
               ],
             ),

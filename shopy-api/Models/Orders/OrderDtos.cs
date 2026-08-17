@@ -1,6 +1,10 @@
 namespace shopy_api.Models.Orders;
 
-public record OrderItemDto(Guid Id, Guid ProductId, string ProductName, decimal UnitPrice, int Quantity, decimal Subtotal);
+public record OrderItemDto(
+    Guid Id, Guid ProductId, string ProductName, decimal UnitPrice, int Quantity, decimal Subtotal,
+    // Foto diambil dari produk yang masih hidup (bukan snapshot seperti nama & harga) —
+    // pemanggil wajib `.ThenInclude(oi => oi.Product)` kalau mau mengisi ini.
+    string? ImageUrl = null);
 
 public record OrderAddressSnapshotDto(
     string RecipientName, string PhoneNumber, string FullAddress, string City, string Province, string PostalCode);

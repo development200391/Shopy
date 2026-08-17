@@ -5,17 +5,23 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/order/order_line_item.dart';
 import '../../models/order/sub_order_detail.dart';
 import '../../models/order/sub_order_status.dart';
+import '../../models/payment/payment.dart';
+import '../../models/payment/payment_status.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/payment_provider.dart';
 import '../../providers/review_provider.dart';
 import '../../services/chat_exception.dart';
 import '../../services/order_exception.dart';
+import '../../services/payment_exception.dart';
 import '../../services/review_exception.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/shared/placeholder_thumbnail.dart';
 import '../chat/chat_room_screen.dart';
+import '../payment/payment_instruction_screen.dart';
+import '../payment/payment_method_screen.dart';
 
 /// Halaman Detail Pesanan + tracking status — 1 toko (`SubOrder`) per
 /// halaman sejak TASKSELLER.md Fase 4. Desain terpilih: **Bold & Colorful**
@@ -108,6 +114,55 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
       ),
     );
     if (confirmed == true) await _updateStatus(SubOrderStatus.completed);
+  }
+
+  /// Lanjut bayar dari halaman ini — satu-satunya jalan ke pembayaran sebelumnya
+  /// cuma layar sukses checkout, jadi pesanan yang ditinggal begitu saja tidak
+  /// pernah bisa dibayar lagi.
+  ///
+  /// Pembayaran dibuat per `Order` (gabungan semua toko), bukan per sub-order,
+  /// jadi pesanan induknya diambil dulu lewat `orderId`. Kalau sudah ada
+  /// transaksi pending yang belum kedaluwarsa, langsung ke layar instruksi
+  /// supaya nomor VA / QR-nya tetap yang lama.
+  Future<void> _payNow() async {
+    setState(() => _busy = true);
+    try {
+      final api = ref.read(orderApiServiceProvider);
+      final order = await api.getOrderDetail(widget.order.orderId);
+
+      Payment? pending;
+      try {
+        final latest = await ref.read(paymentApiServiceProvider).getLatestPayment(order.id);
+        final expiresAt = latest.expiresAt;
+        if (latest.status == PaymentStatus.pending &&
+            (expiresAt == null || expiresAt.isAfter(DateTime.now()))) {
+          pending = latest;
+        }
+      } on PaymentException {
+        // 404 "belum ada transaksi" — wajar untuk pesanan yang belum pernah
+        // dibayar; lanjut ke pemilihan metode.
+      }
+
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => pending == null
+              ? PaymentMethodScreen(order: order)
+              : PaymentInstructionScreen(order: order, payment: pending),
+        ),
+      );
+
+      // Status bisa berubah selama di alur pembayaran (WaitingPayment -> NewOrder).
+      ref.invalidate(subOrderDetailProvider(widget.order.id));
+      ref.read(orderHistoryProvider.notifier).reload();
+    } on OrderException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _openChat() async {
@@ -209,7 +264,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
               children: [
                 Row(
                   children: [
-                    const SizedBox(width: 56, height: 56, child: PlaceholderThumbnail()),
+                    SizedBox(width: 56, height: 56, child: ProductThumbnail(imageUrl: item.imageUrl)),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Column(
@@ -304,6 +359,23 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
             ),
           ],
         ),
+        if (order.status == SubOrderStatus.waitingPayment) ...[
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _busy ? null : _payNow,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: _busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Bayar Sekarang'),
+            ),
+          ),
+        ],
         if (order.status == SubOrderStatus.waitingPayment || order.status == SubOrderStatus.newOrder) ...[
           const SizedBox(height: AppSpacing.sm),
           SizedBox(

@@ -53,7 +53,7 @@ public class SubOrdersController(
         var subOrder = await dbContext.SubOrders
             .Include(so => so.Store)
             .Include(so => so.Order)
-            .Include(so => so.OrderItems)
+            .Include(so => so.OrderItems).ThenInclude(oi => oi.Product)
             .Include(so => so.StatusHistories)
             .SingleOrDefaultAsync(so => so.Id == id && so.Order.UserId == userId);
         if (subOrder is null)
@@ -72,7 +72,7 @@ public class SubOrdersController(
         var subOrder = await dbContext.SubOrders
             .Include(so => so.Store)
             .Include(so => so.Order).ThenInclude(o => o.SubOrders)
-            .Include(so => so.OrderItems)
+            .Include(so => so.OrderItems).ThenInclude(oi => oi.Product)
             .Include(so => so.StatusHistories)
             .SingleOrDefaultAsync(so => so.Id == id && so.Order.UserId == userId);
         if (subOrder is null)
@@ -152,7 +152,8 @@ public class SubOrdersController(
         new OrderAddressSnapshotDto(
             so.Order.RecipientName, so.Order.PhoneNumber, so.Order.FullAddress, so.Order.City, so.Order.Province, so.Order.PostalCode),
         so.Order.Note,
-        so.OrderItems.Select(oi => new OrderItemDto(oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal)).ToList(),
+        so.OrderItems.Select(oi => new OrderItemDto(
+            oi.Id, oi.ProductId, oi.ProductNameSnapshot, oi.UnitPrice, oi.Quantity, oi.Subtotal, oi.Product.ImageUrl)).ToList(),
         so.StatusHistories.OrderBy(h => h.ChangedAt).Select(h => new SubOrderStatusHistoryDto(h.Status.ToString(), h.Note, h.ChangedAt)).ToList(),
         so.CreatedAt, reviewedProductIds);
 }

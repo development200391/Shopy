@@ -29,6 +29,17 @@ class OrderApiService {
     }
   }
 
+  /// Pesanan induk (gabungan semua toko). Dibutuhkan halaman pembayaran, karena
+  /// 1 transaksi Midtrans dibuat per `Order` — bukan per sub-order toko.
+  Future<OrderDetail> getOrderDetail(String id) async {
+    try {
+      final response = await _apiClient.dio.get('/api/orders/$id');
+      return OrderDetail.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw OrderException(_extractMessage(e));
+    }
+  }
+
   Future<SubOrderDetail> getSubOrderDetail(String id) async {
     try {
       final response = await _apiClient.dio.get('/api/orders/sub-orders/$id');
