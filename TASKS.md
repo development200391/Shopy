@@ -197,11 +197,17 @@ Test1234!
 
 
 
-- [ ] Review & rapikan UI/UX di semua halaman
-- [ ] Unit test (backend & Flutter)
-- [ ] Widget/integration test (Flutter)
-- [ ] Testing manual end-to-end (dari register sampai checkout)
-- [ ] Perbaikan bug hasil testing
+- [ ] Review & rapikan UI/UX di semua halaman — **baru sebagian** (4 halaman: splash, login, home, keranjang)
+- [ ] Unit test (backend & Flutter) — **belum dikerjakan**
+- [ ] Widget/integration test (Flutter) — **baru rangka awal**
+  - `integration_test/screenshot_test.dart` (baru) + dependensi `integration_test` di `pubspec.yaml`. Menjalankan app Windows asli, login pakai `test@shopy.com`, lalu memotret tiap halaman ke `build/ui_review/*.png` (412×915). Prasyarat: backend jalan di `localhost:5083`, `CMAKE_POLICY_VERSION_MINIMUM=3.5` di-set (Firebase C++ SDK vs CMake 4 — lihat `.vscode/launch.json`), dan tidak ada sesi debug `shopy_mobile.exe` yang mengunci exe.
+  - ⚠️ **Belum selesai**: navigasi test masih berhenti di halaman Keranjang. Dua asumsi saya sempat salah dan sudah dikoreksi di kode: (a) search bar di home bukan `TextField` melainkan `InkWell` berisi teks placeholder; (b) percobaan navigasi dengan `push` + `Navigator.pop` mem-pop terlalu jauh sampai balik ke halaman login sehingga screenshot salah halaman — sekarang navigasi hanya lewat bottom nav.
+- [ ] Testing manual end-to-end (dari register sampai checkout) — **belum dikerjakan**
+- [x] Perbaikan bug hasil testing — 🐛 **2 bug nyata ditemukan & diperbaiki**
+  1. **🔴 `NotificationHistoryNotifier.build()` memanggil `_fetch()` sinkron** (`providers/notification_provider.dart`) — `_fetch` menyentuh `state` (`state = state.copyWith(...)`) sebelum `build()` mengembalikan nilai, sehingga Riverpod melempar **"Tried to read the state of an uninitialized provider"** dan **halaman Notifikasi gagal dibuka**. Diperbaiki dengan `Future.microtask(...)`.
+  2. **🔴 `OrderHistoryNotifier.build()`** (`providers/order_provider.dart`) — sebab & perbaikan sama, berdampak ke **halaman Riwayat Pesanan**.
+  - Keduanya ditemukan lewat pencarian pola terarah, bukan kebetulan: bug identik sudah lebih dulu ditemukan di `shopy-admin` (4 notifier, TASKADMIN.md Fase 7) dan `shopy-seller` (1 notifier, TASKSELLER.md Fase 10) — **pola kesalahan yang berulang di ketiga app**. Diperiksa juga `address_provider`, `cart_provider`, `wishlist_provider` di app ini: **aman**, karena `_load()` baris pertamanya langsung `await` sehingga tidak menyentuh `state` sinkron.
+- ⚠️ **Perlu ditindaklanjuti**: screenshot `build/ui_review/04_keranjang.png` memperlihatkan body halaman Keranjang kosong (daftar barang tidak tampak) padahal keranjang berisi 2 item senilai Rp16.113.000, dan isi `CartCheckoutBar` tampak berhamburan. Sudah dipastikan **bukan** soal bottom nav yang hilang — itu memang desain (`cart_screen.dart:59-61` mengganti `AppBottomNav` dengan `CartCheckoutBar` saat keranjang berisi). Belum sempat dipastikan apakah body kosong itu bug layout asli atau artefak penangkapan gambar saat transisi.
 
 ## Fase 8 — Rilis
 

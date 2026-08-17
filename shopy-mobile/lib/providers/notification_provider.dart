@@ -38,7 +38,15 @@ class NotificationHistoryNotifier extends Notifier<NotificationHistoryState> {
 
   @override
   NotificationHistoryState build() {
-    _fetch(resetItems: true);
+    // WAJIB ditunda ke microtask berikutnya: `_fetch` menyentuh `state` secara
+    // sinkron (`state = state.copyWith(...)` sebelum `await` pertama), padahal
+    // `state` belum ada sampai `build()` mengembalikan nilai — memanggilnya
+    // langsung bikin Riverpod lempar "Tried to read the state of an
+    // uninitialized provider" begitu halaman ini dibuka.
+    //
+    // Catatan: `_load()` di address/cart/wishlist provider TIDAK kena masalah ini
+    // karena baris pertamanya langsung `await`, jadi tidak menyentuh `state` sinkron.
+    Future.microtask(() => _fetch(resetItems: true));
     return const NotificationHistoryState(loading: true);
   }
 

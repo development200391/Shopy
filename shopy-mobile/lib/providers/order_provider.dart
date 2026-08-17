@@ -27,7 +27,10 @@ class OrderHistoryNotifier extends Notifier<OrderHistoryState> {
 
   @override
   OrderHistoryState build() {
-    _fetch(resetItems: true);
+    // Lihat catatan di `notification_provider.dart` — `_fetch` menyentuh `state`
+    // sebelum `build()` selesai, jadi harus ditunda supaya halaman Riwayat
+    // Pesanan tidak gagal dibuka dengan "uninitialized provider".
+    Future.microtask(() => _fetch(resetItems: true));
     return const OrderHistoryState(loading: true);
   }
 
